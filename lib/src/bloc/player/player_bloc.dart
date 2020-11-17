@@ -1,87 +1,89 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:audio_service/audio_service.dart';
-import 'package:collection/collection.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/AudioPlayer.dart';
 import 'package:music_player/src/MediaLib.dart';
+import 'package:music_player/src/bloc/player/player_event.dart';
+import 'package:music_player/src/bloc/player/player_state.dart';
+import 'package:bloc/bloc.dart';
+
+import 'dart:async';
+
 import 'package:music_player/src/bloc/radio/station.dart';
 import 'package:music_player/src/net/radio.dart';
-import 'package:xml/xml.dart';
-
-class Utility {
-  /// Simple method to format milliseconds time in mm:ss  minutes:seconds format.
-  /// [ms] milliseconds number
-  static String parseToMinutesSeconds(int ms) {
-    String data;
-    Duration duration = Duration(milliseconds: ms);
-
-    int minutes = duration.inMinutes;
-    int seconds = (duration.inSeconds) - (minutes * 60);
-
-    data = minutes.toString() + ":";
-    if (seconds <= 9) data += "0";
-
-    data += seconds.toString();
-    return data;
-  }
-
-  static Widget createDefaultInfoWidget(final Widget child) {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        Center(
-          child: child,
-        ),
-      ],
-    );
-  }
-}
-
-class Seeker {
-  final AudioPlayer player;
-  final Duration positionInterval;
-  final Duration stepInterval;
-  final MediaItem mediaItem;
-  bool _running = false;
-
-  Seeker(
-    this.player,
-    this.positionInterval,
-    this.stepInterval,
-    this.mediaItem,
-  );
-
-  start() async {
-    _running = true;
-    while (_running) {
-      Duration newPosition = player.position + positionInterval;
-      if (newPosition < Duration.zero) newPosition = Duration.zero;
-      if (newPosition > mediaItem.duration) newPosition = mediaItem.duration;
-      player.seek(newPosition);
-      await Future.delayed(stepInterval);
-    }
-  }
-
-  stop() {
-    _running = false;
-  }
-}
 
 void _audioPlayerTaskEntrypoint() async {
   AudioServiceBackground.run(() => AudioPlayerTask());
 }
 
-class PlayerService {
-  static bool radioPlaying;
-  static Timer _timer;
+class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
+  PlayerBloc() : super(PlayerEmpty()) {
+    AudioService.playbackStateStream.listen((PlaybackState state) {
+      if (state == null) this.add(PlayerStop());
+    });
+  }
 
-  static void startAudioPlay(List<SongInfo> playlist, SongInfo first) {
+  @override
+  Stream<PlayerState> mapEventToState(PlayerEvent event) async* {
+    final currentState = state;
+
+    if (event is PlayerPlayRadio) {
+      try {
+        if (currentState is PlayerEmpty) {
+          final songInfo = await _loadStation(event.station);
+          yield PlayerInitial(songInfo.items.first, false);
+          await _audioManager(songInfo);
+          yield PlayerPlaying(null, songInfo.items.first, false);
+          final playlist = await _loadStations(event.stations, event.station);
+          await addPlaylistToQueue(playlist.items);
+          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
+          return;
+        }
+        if (currentState is PlayerPlaying) {
+          final songInfo = await _loadStation(event.station);
+          yield PlayerInitial(songInfo.items.first, false);
+          final playlist = await _loadStations(event.stations, event.station);
+          await AudioService.updateQueue(playlist.items);
+          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
+          return;
+        }
+      } catch (_) {
+        yield PlayerFailure();
+      }
+    } else if (event is PlayerPlay) {
+      try {
+        if (currentState is PlayerEmpty) {
+          final songInfo = _loadMediaItem(event.songInfo);
+          yield PlayerInitial(songInfo.items.first, false);
+          await _audioManager(songInfo);
+          yield PlayerPlaying(null, songInfo.items.first, false);
+          final playlist = _loadPlaylist(songInfo.items.first, event.playlist);
+          await addPlaylistToQueue(playlist.items);
+          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
+          return;
+        }
+        if (currentState is PlayerPlaying) {
+          final songInfo = _loadMediaItem(event.songInfo);
+          yield PlayerInitial(songInfo.items.first, false);
+          await AudioService.updateQueue(songInfo.items);
+          final playlist = _loadPlaylist(songInfo.items.first, event.playlist);
+          await addPlaylistToQueue(playlist.items);
+          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
+          return;
+        }
+      } catch (_) {
+        yield PlayerFailure();
+      }
+    } else if (event is PlayerStop) {
+      yield PlayerEmpty();
+    }
+  }
+
+  Future<void> addPlaylistToQueue(List<MediaItem> playlist) async {
+    return AudioService.addQueueItems(playlist);
+  }
+
+  /*void startAudioPlay(List<SongInfo> playlist, SongInfo first) {
     var d = DateTime.now();
     _timer?.cancel();
     radioPlaying = false;
@@ -109,19 +111,18 @@ class PlayerService {
                 .id);
           }
         } else {
-          AudioService.updateQueue(_loadPlaylistPre(first).items).then(
-              (value) => AudioService.addQueueItems(
-                  _loadPlaylist(first, playlist).items));
+          AudioService.updateQueue(_loadMediaItem(first).items).then((value) =>
+              AudioService.addQueueItems(_loadPlaylist(first, playlist).items));
         }
       } else {
-        AudioService.updateQueue(_loadPlaylistPre(first).items).then((value) =>
+        AudioService.updateQueue(_loadMediaItem(first).items).then((value) =>
             AudioService.addQueueItems(_loadPlaylist(first, playlist).items));
       }
     }
     print(d.difference(DateTime.now()));
-  }
+  }*/
 
-  static void startRadioPlay(List<Station> streams, Station stream) {
+  /*static void startRadioPlay(List<Station> streams, Station stream) {
     radioPlaying = true;
     _timer?.cancel();
 
@@ -159,22 +160,11 @@ class PlayerService {
     } else {
       timer.cancel();
     }
-  }
+  }*/
 
-  static Future<bool> _audioManager(SongInfo first) {
-    MediaLibrary library = _loadPlaylistPre(first);
+  static Future<bool> _audioManager(MediaLibrary first) {
     final Map<String, dynamic> params = {
-      'playlist': library.toJson(),
-    };
-    return startAudioManager(params);
-  }
-
-  static Future<bool> _streamManager(Station stream) async {
-    print("Load Streams");
-    MediaLibrary library = await _loadStreamsPre(stream);
-    print("Strams Loaded");
-    final Map<String, dynamic> params = {
-      'playlist': library.toJson(),
+      'playlist': first.toJson(),
     };
     return startAudioManager(params);
   }
@@ -190,9 +180,7 @@ class PlayerService {
     );
   }
 
-  static MediaLibrary _loadPlaylist(SongInfo first, List<SongInfo> songList) {
-    var d = DateTime.now();
-
+  static MediaLibrary _loadPlaylist(MediaItem first, List<SongInfo> songList) {
     List<MediaItem> playlist = List();
 
     for (SongInfo song in songList) {
@@ -207,8 +195,7 @@ class PlayerService {
           duration: Duration(milliseconds: int.parse(song.duration ?? "0"))));
     }
 
-    int i = playlist
-        .indexOf(playlist.firstWhere((element) => element.genre == first.id));
+    int i = playlist.indexOf(first);
 
     if (i == 0) {
       playlist.removeAt(0);
@@ -218,16 +205,11 @@ class PlayerService {
     List<MediaItem> l2 = playlist.sublist(i + 1, playlist.length);
 
     l2.addAll(l1);
-
-    print(d.difference(DateTime.now()));
     return MediaLibrary(l2);
   }
 
-  static MediaLibrary _loadPlaylistPre(SongInfo first) {
-    var d = DateTime.now();
-
+  static MediaLibrary _loadMediaItem(SongInfo first) {
     List<MediaItem> playlist = List();
-
     playlist.add(MediaItem(
         id: "file://${first.filePath}",
         album: first.album,
@@ -236,12 +218,10 @@ class PlayerService {
         genre: first.id,
         artUri: first.albumArtwork ?? first.albumId,
         duration: Duration(milliseconds: int.parse(first.duration ?? "0"))));
-
-    print(d.difference(DateTime.now()));
     return MediaLibrary(playlist);
   }
 
-  static Future<List<MediaItem>> _loadStreams(
+  static Future<MediaLibrary> _loadStations(
       List<Station> streams, Station stream) async {
     List<MediaItem> playlist = List();
 
@@ -262,10 +242,10 @@ class PlayerService {
       playlist.removeAt(i);
     }
 
-    return playlist;
+    return MediaLibrary(playlist);
   }
 
-  static Future<MediaLibrary> _loadStreamsPre(Station stream) async {
+  static Future<MediaLibrary> _loadStation(Station stream) async {
     List<MediaItem> playlist = List();
 
     playlist.add(MediaItem(

@@ -136,10 +136,10 @@ class AudioPlayerTask extends BackgroundAudioTask {
   Future<void> onUpdateQueue(List<MediaItem> newqueue) async {
     audioSource = ConcatenatingAudioSource(
       children:
-          queue.map((item) => AudioSource.uri(Uri.parse(item.id))).toList(),
+          newqueue.map((item) => AudioSource.uri(Uri.parse(item.id))).toList(),
     );
     mediaLibrary = MediaLibrary(newqueue);
-    AudioServiceBackground.setQueue(queue);
+    AudioServiceBackground.setQueue(newqueue);
     try {
       await _player.load(audioSource);
     } catch (e) {
@@ -218,6 +218,13 @@ class AudioPlayerTask extends BackgroundAudioTask {
       bufferedPosition: _player.bufferedPosition,
       speed: _player.speed,
     );
+  }
+
+  @override
+  Future<void> onTaskRemoved() {
+    if (!AudioServiceBackground.state.playing) {
+      onStop();
+    }
   }
 
   /// Maps just_audio's processing state into into audio_service's playing

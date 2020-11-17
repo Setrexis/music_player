@@ -140,7 +140,8 @@ class ArtistInfoDeteils extends StatelessWidget {
         Expanded(
           child: AlbumTab(
             removePaddingTop: false,
-            albumListFuture: audioQuery.getAlbumsFromArtist(artist: info.name),
+            albumListFuture:
+                audioQuery.getAlbumsFromArtist(artist: info.name ?? "Afrojack"),
             bloc: bloc,
           ),
         ),

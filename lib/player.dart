@@ -203,7 +203,17 @@ class _PlayerSceenState extends State<PlayerSceen>
                             ),
                             IconButton(
                               icon: Icon(Icons.whatshot_outlined),
-                              onPressed: () => {/* Flutter audio query*/},
+                              onPressed: () => {
+                                audioQuery.getPlaylists().then((value) async {
+                                  List<SongInfo> i =
+                                      await audioQuery.getSongsById(
+                                          ids: {snapshot.data.genre}.toList());
+                                  value
+                                      .firstWhere((element) =>
+                                          element.name == "Favoriten")
+                                      .addSong(song: i[0]);
+                                })
+                              },
                             ),
                             IconButton(
                               icon: Icon(Icons.repeat),

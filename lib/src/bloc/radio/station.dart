@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Station extends Equatable {
-  final int id;
+  final String id;
   final String title;
   final String genre;
   final String ct;

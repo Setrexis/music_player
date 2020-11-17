@@ -6,21 +6,20 @@ import 'dart:ui';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:music_player/player.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/AplicationBloc.dart';
-import 'package:music_player/src/bloc/BlocProvider.dart';
+import 'package:music_player/src/bloc/player/player_bloc.dart';
+import 'package:music_player/src/bloc/radio/station_bloc.dart';
+import 'package:music_player/src/bloc/radio/station_event.dart';
 import 'package:music_player/src/ui/ArtistTab.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/genreTab.dart';
 import 'package:music_player/src/ui/homeTab.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:audio_session/audio_session.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:music_player/src/ui/onlineRadioTab.dart';
 import 'package:music_player/src/ui/songsTab.dart';
-import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
-import 'package:rxdart/rxdart.dart';
+
+import 'package:http/http.dart' as http;
 
 class Home extends StatefulWidget {
   @override
@@ -33,7 +32,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    bloc ??= BlocProvider.of<ApplicationBloc>(context);
+    //bloc ??= BlocProvider.of<ApplicationBloc>(context);
 
     return StreamBuilder<bool>(
         stream: AudioService.runningStream,
@@ -131,7 +130,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               children: [
                                 Container(
                                   child: HomeTab(
-                                    bloc: bloc,
                                     bottomPadding: paddingBottom,
                                   ),
                                 ),
@@ -153,8 +151,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                   songListFuture: audioQuery.getSongs(),
                                   bottomPadding: paddingBottom,
                                 ),
-                                OnlineRadioTabSearch(
-                                  bottomPadding: paddingBottom,
+                                BlocProvider(
+                                  create: (context) =>
+                                      StationBloc(httpClient: http.Client())
+                                        ..add(StationFetched()),
+                                  child: OnlineRadioTabSearch(
+                                    bottomPadding: paddingBottom,
+                                  ),
                                 )
                               ],
                             ),

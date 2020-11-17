@@ -3,18 +3,17 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:music_player/player.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/Utility.dart';
-import 'package:music_player/src/bloc/AplicationBloc.dart';
-import 'package:music_player/src/bloc/BlocProvider.dart';
+import 'package:music_player/src/bloc/player/player_bloc.dart';
+import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 
 class HomeTab extends StatefulWidget {
-  final ApplicationBloc bloc;
   final double bottomPadding;
 
-  const HomeTab({Key key, this.bloc, this.bottomPadding}) : super(key: key);
+  const HomeTab({Key key, this.bottomPadding}) : super(key: key);
 
   @override
   _HomeTabState createState() => _HomeTabState();
@@ -30,8 +29,8 @@ class _HomeTabState extends State<HomeTab> {
         removeTop: true,
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: StreamBuilder<List<PlaylistInfo>>(
-            stream: widget.bloc.playlistStream,
+          child: FutureBuilder<List<PlaylistInfo>>(
+            future: audioQuery.getPlaylists(),
             builder: (context, snapshot) {
               print(snapshot);
               if (!snapshot.hasData) {
@@ -295,11 +294,10 @@ class _HomeTabState extends State<HomeTab> {
                             color: Color(0xFF4e606e)),
                       ),
                     ),
-                    BlocProvider(
-                      bloc: PlaylistDetailBloc(recentlyPlayed),
-                      child: RecentlyPlayedSongsList(
-                        bottomPadding: widget.bottomPadding,
-                      ),
+                    RecentlyPlayedSongsList(
+                      bottomPadding: widget.bottomPadding,
+                      playerBloc: BlocProvider.of<PlayerBloc>(context),
+                      playlist: recentlyPlayed,
                     ),
                   ]);
             },
@@ -310,18 +308,19 @@ class _HomeTabState extends State<HomeTab> {
 
 // ignore: must_be_immutable
 class RecentlyPlayedSongsList extends StatelessWidget {
-  PlaylistDetailBloc bloc;
+  final PlaylistInfo playlist;
   FlutterAudioQuery audioQuery = FlutterAudioQuery();
   final double bottomPadding;
+  final PlayerBloc playerBloc;
 
-  RecentlyPlayedSongsList({Key key, this.bottomPadding}) : super(key: key);
+  RecentlyPlayedSongsList(
+      {Key key, this.bottomPadding, this.playerBloc, this.playlist})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    bloc ??= BlocProvider.of<PlaylistDetailBloc>(context);
-
-    return StreamBuilder<List<SongInfo>>(
-        stream: bloc.playlistSongs,
+    return FutureBuilder<List<SongInfo>>(
+        future: audioQuery.getSongsFromPlaylist(playlist: playlist),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
@@ -352,7 +351,7 @@ class RecentlyPlayedSongsList extends StatelessWidget {
                             stops: [0.0, 1.0],
                             tileMode: TileMode.clamp)),
                     child: InkWell(
-                      onTap: () => PlayerService.startAudioPlay(songs, song),
+                      onTap: () => playerBloc.add(PlayerPlay(song, songs)),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),

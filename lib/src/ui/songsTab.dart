@@ -1,8 +1,11 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/player.dart';
 import 'package:music_player/src/Utility.dart';
+import 'package:music_player/src/bloc/player/player_bloc.dart';
+import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 
 class SongTab extends StatefulWidget {
@@ -25,6 +28,14 @@ class SongTab extends StatefulWidget {
 
 class _SongTabState extends State<SongTab> {
   String curruntSong = AudioService.currentMediaItem?.genre ?? "0";
+  PlayerBloc _playerBloc;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _playerBloc = BlocProvider.of<PlayerBloc>(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +69,7 @@ class _SongTabState extends State<SongTab> {
                             tileMode: TileMode.clamp)),
                     child: InkWell(
                       onTap: () {
-                        PlayerService.startAudioPlay(snapshot.data, song);
+                        _playerBloc.add(PlayerPlay(song, snapshot.data));
                         setState(() {
                           curruntSong = song.id;
                         });
@@ -104,18 +115,13 @@ class _SongTabState extends State<SongTab> {
                                 ),
                               ],
                             ),
-                            ((curruntSong) == song.id)
-                                ? Icon(
-                                    Icons.bar_chart,
-                                    color: Color(0xFF4989a2),
-                                  )
-                                : Text(
-                                    song.duration == null
-                                        ? Utility.parseToMinutesSeconds(0)
-                                        : Utility.parseToMinutesSeconds(
-                                            int.tryParse(song.duration)),
-                                    style: TextStyle(color: Color(0xFF4e606e)),
-                                  ),
+                            Text(
+                              song.duration == null
+                                  ? Utility.parseToMinutesSeconds(0)
+                                  : Utility.parseToMinutesSeconds(
+                                      int.tryParse(song.duration)),
+                              style: TextStyle(color: Color(0xFF4e606e)),
+                            ),
                           ],
                         ),
                       ),

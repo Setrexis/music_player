@@ -9,9 +9,9 @@ abstract class StationState extends Equatable {
   List<Object> get props => [];
 }
 
-class PostInitial extends StationState {}
+class StationInitial extends StationState {}
 
-class PostFailure extends StationState {}
+class StationFailure extends StationState {}
 
 class StationSuccess extends StationState {
   final List<Station> station;

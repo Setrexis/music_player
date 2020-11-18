@@ -70,7 +70,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
         radio = state.radio;
       }
       if (state is PlayerPlaying) {
-        mediaItem = state.curruentMediaItem;
+        mediaItem = null;
         radio = state.radio;
       }
       AnimationController animationController = AnimationController(
@@ -80,6 +80,8 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               mediaItem = snapshot.data;
+            } else if (!snapshot.hasData && mediaItem == null) {
+              return Container();
             }
 
             return Positioned(
@@ -99,7 +101,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                       builder: (context) => PlayerSceen(),
                     )),
                     child: Container(
-                      height: 80,
+                      height: 90,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -136,7 +138,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                                       mediaItem.artist ?? "",
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: Color(0xFF4e606e),
+                                        color: Colors.white70,
                                         fontSize: 16,
                                       ),
                                     ),
@@ -167,8 +169,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                                               }
 
                                               return CircularProgressIndicator(
-                                                backgroundColor:
-                                                    Color(0xFF4e606e),
+                                                backgroundColor: Colors.white12,
                                                 valueColor:
                                                     new AlwaysStoppedAnimation<
                                                         Color>(Colors.white),

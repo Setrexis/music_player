@@ -148,11 +148,13 @@ class StationWidget extends StatelessWidget {
         child: InkWell(
           onTap: () => playerBloc.add(PlayerPlayRadio(
               station,
-              stations.getRange(
-                  index,
-                  index + 10 < stations.length
-                      ? index + 10
-                      : stations.length))),
+              stations
+                  .getRange(
+                      index,
+                      index + 10 < stations.length
+                          ? index + 10
+                          : stations.length)
+                  .toList())),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(

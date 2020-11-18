@@ -41,7 +41,13 @@ class _HomeTabState extends State<HomeTab> {
 
               print(snapshot.data.length);
 
-              if (snapshot.data.length == 0) {
+              if (snapshot.data.length == 0 ||
+                  snapshot.data
+                          .where((element) =>
+                              element.name == "recently-played" ||
+                              element.name == "Favoriten")
+                          .length <
+                      2) {
                 FlutterAudioQuery.createPlaylist(playlistName: "Favoriten");
                 FlutterAudioQuery.createPlaylist(
                     playlistName: "recently-played");

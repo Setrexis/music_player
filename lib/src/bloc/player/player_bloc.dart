@@ -31,20 +31,20 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       try {
         if (currentState is PlayerEmpty) {
           final songInfo = await _loadStation(event.station);
-          yield PlayerInitial(songInfo.items.first, false);
+          yield PlayerInitial(songInfo.items.first, true);
           await _audioManager(songInfo);
-          yield PlayerPlaying(null, songInfo.items.first, false);
+          yield PlayerPlaying(null, songInfo.items.first, true);
           final playlist = await _loadStations(event.stations, event.station);
           await addPlaylistToQueue(playlist.items);
-          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
+          yield PlayerPlaying(playlist.items, songInfo.items.first, true);
           return;
         }
         if (currentState is PlayerPlaying) {
           final songInfo = await _loadStation(event.station);
-          yield PlayerInitial(songInfo.items.first, false);
+          yield PlayerInitial(songInfo.items.first, true);
           final playlist = await _loadStations(event.stations, event.station);
           await AudioService.updateQueue(playlist.items);
-          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
+          yield PlayerPlaying(playlist.items, songInfo.items.first, true);
           return;
         }
       } catch (_) {

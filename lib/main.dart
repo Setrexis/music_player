@@ -18,18 +18,22 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData.dark().copyWith(
-          accentColor: Color(0xFF4989a2),
-          iconTheme: IconThemeData().copyWith(color: Color(0xFF4e606e)),
-          primaryColor: Colors.white,
-          textTheme: GoogleFonts.rubikTextTheme()),
-      home: AudioServiceWidget(
-          child: BlocProvider(
-        child: Home(),
+    return BlocProvider(
+      create: (context) => PlayerBloc(),
+      child: BlocProvider(
         create: (context) => PlayerBloc(),
-      )),
+        child: MaterialApp(
+          title: 'Flutter Demo',
+          theme: ThemeData.dark().copyWith(
+              accentColor: Color(0xFF4989a2),
+              iconTheme: IconThemeData().copyWith(color: Color(0xFF4e606e)),
+              primaryColor: Colors.white,
+              textTheme: GoogleFonts.rubikTextTheme()),
+          home: AudioServiceWidget(
+            child: Home(),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -11,15 +11,39 @@ import 'dart:async';
 
 import 'package:music_player/src/bloc/radio/station.dart';
 import 'package:music_player/src/net/radio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void _audioPlayerTaskEntrypoint() async {
   AudioServiceBackground.run(() => AudioPlayerTask());
 }
 
 class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
-  PlayerBloc() : super(PlayerEmpty()) {
-    AudioService.playbackStateStream.listen((PlaybackState state) {
+  PlayerBloc()
+      : super(AudioService.currentMediaItem == null
+            ? PlayerEmpty()
+            : PlayerPlaying(null, null,
+                AudioService.currentMediaItem.genre.contains("r"))) {
+    AudioService.playbackStateStream.listen((PlaybackState state) async {
+      print(state.processingState.toString());
       if (state == null) this.add(PlayerStop());
+      if (state.processingState == AudioProcessingState.ready) {
+        MediaItem cur = AudioService.currentMediaItem;
+        print("Test sdfjsojf----------------------------------------------");
+        if (cur != null) {
+          if (cur.genre.contains("r"))
+            return; // Only musik in recently played no radio.
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          var recetplayed = prefs.getStringList("recentlyplayed");
+          if (recetplayed != null) {
+            recetplayed.remove(cur.genre);
+            recetplayed.insert(0, cur.genre);
+            if (recetplayed.length > 100) recetplayed.removeLast();
+            prefs.setStringList("recentlyplayed", recetplayed);
+          } else {
+            prefs.setStringList("recentlyplayed", [cur.genre]);
+          }
+        }
+      }
     });
   }
 
@@ -35,7 +59,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           await _audioManager(songInfo);
           yield PlayerPlaying(null, songInfo.items.first, true);
           final playlist = await _loadStations(event.stations, event.station);
-          await addPlaylistToQueue(playlist.items);
+          await _addPlaylistToQueue(playlist.items);
           yield PlayerPlaying(playlist.items, songInfo.items.first, true);
           return;
         }
@@ -58,7 +82,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           await _audioManager(songInfo);
           yield PlayerPlaying(null, songInfo.items.first, false);
           final playlist = _loadPlaylist(songInfo.items.first, event.playlist);
-          await addPlaylistToQueue(playlist.items);
+          await _addPlaylistToQueue(playlist.items);
           yield PlayerPlaying(playlist.items, songInfo.items.first, false);
           return;
         }
@@ -67,7 +91,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           yield PlayerInitial(songInfo.items.first, false);
           await AudioService.updateQueue(songInfo.items);
           final playlist = _loadPlaylist(songInfo.items.first, event.playlist);
-          await addPlaylistToQueue(playlist.items);
+          await _addPlaylistToQueue(playlist.items);
           yield PlayerPlaying(playlist.items, songInfo.items.first, false);
           return;
         }
@@ -79,106 +103,26 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     }
   }
 
-  Future<void> addPlaylistToQueue(List<MediaItem> playlist) async {
+  Future<void> _addPlaylistToQueue(List<MediaItem> playlist) async {
     return AudioService.addQueueItems(playlist);
   }
-
-  /*void startAudioPlay(List<SongInfo> playlist, SongInfo first) {
-    var d = DateTime.now();
-    _timer?.cancel();
-    radioPlaying = false;
-    print("Start audio");
-    if (AudioService.playbackState == null ||
-        !(AudioService.playbackState?.playing ?? true)) {
-      _audioManager(first).then((value) {
-        print(d.difference(DateTime.now()).inSeconds.toString() +
-            " seconds till pre load load and start");
-        if (playlist.length > 300) playlist.removeRange(300, playlist.length);
-        if (value)
-          AudioService.addQueueItems(_loadPlaylist(first, playlist).items).then(
-              (value) => print(
-                  d.difference(DateTime.now()).inSeconds.toString() +
-                      " sconds till playlist load complete"));
-      });
-    } else if (AudioService.playbackState.playing) {
-      if (playlist.length > 300) playlist.removeRange(300, playlist.length);
-      if (UnorderedIterableEquality()
-          .equals(AudioService.queue, _loadPlaylist(first, playlist).items)) {
-        if (first != null) {
-          if (first.id != AudioService.currentMediaItem.genre) {
-            AudioService.skipToQueueItem(AudioService.queue
-                .firstWhere((element) => element.genre == first.id)
-                .id);
-          }
-        } else {
-          AudioService.updateQueue(_loadMediaItem(first).items).then((value) =>
-              AudioService.addQueueItems(_loadPlaylist(first, playlist).items));
-        }
-      } else {
-        AudioService.updateQueue(_loadMediaItem(first).items).then((value) =>
-            AudioService.addQueueItems(_loadPlaylist(first, playlist).items));
-      }
-    }
-    print(d.difference(DateTime.now()));
-  }*/
-
-  /*static void startRadioPlay(List<Station> streams, Station stream) {
-    radioPlaying = true;
-    _timer?.cancel();
-
-    if (streams.length > 20) {
-      streams.removeRange(20, streams.length);
-    }
-
-    if (stream != null) {
-      _streamManager(stream).then((value) async {
-        AudioService.addQueueItems(await _loadStreams(streams, stream));
-        //startMediaItemUpdate();
-      });
-    }
-  }
-
-  static startMediaItemUpdate() {
-    _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
-      updateMediaItem(timer);
-    });
-  }
-
-  static updateMediaItem(Timer timer) async {
-    if (radioPlaying || !AudioService.running) {
-      MediaItem i = AudioService.currentMediaItem;
-      String s = await OnlineRadio.getCurantTrak(i.genre);
-      MediaItem newItem = MediaItem(
-          id: i.id,
-          album: s,
-          title: i.title,
-          artUri: i.artUri,
-          artist: i.artist,
-          genre: i.genre);
-      AudioService.updateMediaItem(newItem);
-    } else {
-      timer.cancel();
-    }
-  }*/
 
   static Future<bool> _audioManager(MediaLibrary first) {
     final Map<String, dynamic> params = {
       'playlist': first.toJson(),
     };
-    return startAudioManager(params);
+    return _startAudioManager(params);
   }
 
-  static Future<bool> startAudioManager(var params) async {
-    return AudioService.start(
-      backgroundTaskEntrypoint: _audioPlayerTaskEntrypoint,
-      params: params,
-      androidNotificationChannelName: 'Music Player',
-      androidNotificationColor: 0xFF4989a2,
-      androidNotificationIcon: 'drawable/ic_notification',
-      androidEnableQueue: true,
-    );
-  }
+  static Future<bool> _startAudioManager(var params) async =>
+      AudioService.start(
+        backgroundTaskEntrypoint: _audioPlayerTaskEntrypoint,
+        params: params,
+        androidNotificationChannelName: 'Music Player',
+        androidNotificationColor: 0xFF4989a2,
+        androidNotificationIcon: 'drawable/ic_notification',
+        androidEnableQueue: true,
+      );
 
   static MediaLibrary _loadPlaylist(MediaItem first, List<SongInfo> songList) {
     List<MediaItem> playlist = List();
@@ -231,12 +175,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           album: song.id ?? "",
           title: song.title,
           artist: song.ct ?? "",
-          genre: song.id,
+          genre: song.rid,
           artUri: song.logo ?? "",
           duration: Duration(milliseconds: 0)));
     }
 
-    int i = playlist.indexWhere((element) => element.genre == stream.id);
+    int i = playlist.indexWhere((element) => element.genre == stream.rid);
 
     if (i != null) {
       playlist.removeAt(i);
@@ -253,7 +197,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         album: stream.id ?? "",
         title: stream.title,
         artist: stream.ct ?? "",
-        genre: stream.id,
+        genre: stream.rid,
         artUri: stream.logo ?? "",
         duration: Duration(milliseconds: 0)));
     return MediaLibrary(playlist);

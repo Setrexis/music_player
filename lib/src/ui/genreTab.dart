@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:music_player/src/bloc/AplicationBloc.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 
 class GenreTab extends StatefulWidget {
-  final ApplicationBloc bloc;
   final double bottomPadding;
+  final Future genreData;
 
-  const GenreTab({Key key, this.bloc, this.bottomPadding}) : super(key: key);
+  const GenreTab({Key key, this.bottomPadding, this.genreData})
+      : super(key: key);
 
   @override
   _GenreTabState createState() => _GenreTabState();
@@ -22,7 +22,7 @@ class _GenreTabState extends State<GenreTab> {
   Widget build(BuildContext context) {
     return Container(
       child: FutureBuilder(
-        future: audioQuery.getGenres(),
+        future: widget.genreData,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
@@ -60,10 +60,8 @@ class _GenreTabState extends State<GenreTab> {
 class GenreItem extends StatefulWidget {
   final GenreInfo genre;
   final FlutterAudioQuery audioQuery;
-  final ApplicationBloc bloc;
 
-  const GenreItem({Key key, this.genre, this.audioQuery, this.bloc})
-      : super(key: key);
+  const GenreItem({Key key, this.genre, this.audioQuery}) : super(key: key);
 
   @override
   _GenreItemState createState() => _GenreItemState();
@@ -93,7 +91,6 @@ class _GenreItemState extends State<GenreItem> {
         onTap: () => Navigator.of(context).push(new MaterialPageRoute(
           builder: (context) => DetailPage(
             child: AlbumTab(
-              bloc: widget.bloc,
               albumListFuture: albumListFuture,
             ),
             title: widget.genre.name,

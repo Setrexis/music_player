@@ -32,5 +32,6 @@ class PlayerPlaying extends PlayerState {
       this.currentMediaItemPlaylist, this.curruentMediaItem, this.radio);
 
   @override
-  List<Object> get props => [curruentMediaItem, currentMediaItemPlaylist];
+  List<Object> get props =>
+      [curruentMediaItem, currentMediaItemPlaylist, radio];
 }

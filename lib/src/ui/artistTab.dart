@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:music_player/src/bloc/AplicationBloc.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 
 class ArtistTab extends StatefulWidget {
-  final ApplicationBloc bloc;
   final double bottomPadding;
+  final Future data;
 
-  const ArtistTab({Key key, this.bloc, this.bottomPadding}) : super(key: key);
+  const ArtistTab({Key key, this.bottomPadding, this.data}) : super(key: key);
 
   @override
   _ArtistTabState createState() => _ArtistTabState();
@@ -23,7 +22,7 @@ class _ArtistTabState extends State<ArtistTab> {
   Widget build(BuildContext context) {
     return Container(
       child: FutureBuilder<List<ArtistInfo>>(
-          future: audioQuery.getArtists(),
+          future: widget.data,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Center(child: CircularProgressIndicator());
@@ -58,7 +57,6 @@ class _ArtistTabState extends State<ArtistTab> {
                                       title: artist.name,
                                       child: ArtistInfoDeteils(
                                         audioQuery: audioQuery,
-                                        bloc: widget.bloc,
                                         info: artist,
                                       ),
                                     )));
@@ -127,10 +125,9 @@ class _ArtistTabState extends State<ArtistTab> {
 
 class ArtistInfoDeteils extends StatelessWidget {
   final FlutterAudioQuery audioQuery;
-  final ApplicationBloc bloc;
   final ArtistInfo info;
 
-  const ArtistInfoDeteils({Key key, this.audioQuery, this.bloc, this.info})
+  const ArtistInfoDeteils({Key key, this.audioQuery, this.info})
       : super(key: key);
 
   @override
@@ -142,7 +139,6 @@ class ArtistInfoDeteils extends StatelessWidget {
             removePaddingTop: false,
             albumListFuture:
                 audioQuery.getAlbumsFromArtist(artist: info.name ?? "Afrojack"),
-            bloc: bloc,
           ),
         ),
         Expanded(

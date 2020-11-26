@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -57,33 +59,49 @@ class BottomPlayerBar extends StatefulWidget {
 
 class _BottomPlayerBarState extends State<BottomPlayerBar>
     with TickerProviderStateMixin {
+  AnimationController animationController;
+  StreamSubscription playing;
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    playing?.cancel();
+    animationController?.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PlayerBloc, PlayerState>(builder: (context, state) {
-      if (state is PlayerEmpty) {
-        return Container();
-      }
-      MediaItem mediaItem;
-      bool radio = true;
-      if (state is PlayerInitial) {
-        mediaItem = state.curruentMediaItem;
-        radio = state.radio;
-      }
-      if (state is PlayerPlaying) {
-        mediaItem = null;
-        radio = state.radio;
-      }
-      AnimationController animationController = AnimationController(
-          vsync: this, duration: Duration(milliseconds: 250));
-      return StreamBuilder<Object>(
-          stream: AudioService.currentMediaItemStream,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              mediaItem = snapshot.data;
-            } else if (!snapshot.hasData && mediaItem == null) {
+    return StreamBuilder<MediaItem>(
+        stream: AudioService.currentMediaItemStream,
+        builder: (context, snapshot) {
+          return BlocBuilder<PlayerBloc, PlayerState>(
+              builder: (context, state) {
+            if (state is PlayerEmpty && !snapshot.hasData) {
+              print("What up!");
               return Container();
             }
-
+            MediaItem mediaItem;
+            bool radio = true;
+            if (state is PlayerInitial) {
+              mediaItem = state.curruentMediaItem;
+              radio = state.radio;
+            }
+            if (state is PlayerPlaying) {
+              mediaItem = snapshot.data;
+              radio = state.radio;
+            }
+            if (mediaItem == null) {
+              return Container();
+            }
+            animationController = AnimationController(
+                vsync: this, duration: Duration(milliseconds: 250));
+            playing = AudioService.playbackStateStream.listen((event) {
+              if (event.playing)
+                animationController.reverse();
+              else
+                animationController.forward();
+            });
             return Positioned(
               bottom: 0,
               left: 0,
@@ -185,9 +203,6 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                                       IconButton(
                                         onPressed: () {
                                           AudioService.playbackState.playing
-                                              ? animationController.forward()
-                                              : animationController.reverse();
-                                          AudioService.playbackState.playing
                                               ? AudioService.pause()
                                               : AudioService.play();
                                         },
@@ -209,6 +224,6 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
               ),
             );
           });
-    });
+        });
   }
 }

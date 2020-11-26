@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:music_player/AudioPlayer.dart';
 import 'package:music_player/home.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
+import 'package:music_player/src/bloc/radio/bloc.dart';
+import 'package:music_player/src/bloc/radio/station_bloc.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MyApp());
@@ -30,7 +33,13 @@ class MyApp extends StatelessWidget {
               primaryColor: Colors.white,
               textTheme: GoogleFonts.rubikTextTheme()),
           home: AudioServiceWidget(
-            child: Home(),
+            child: BlocProvider<StationBloc>(
+              create: (context) {
+                return StationBloc(httpClient: http.Client())
+                  ..add(StationFetched());
+              },
+              child: Home(),
+            ),
           ),
         ),
       ),

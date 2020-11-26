@@ -7,11 +7,9 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/src/bloc/AplicationBloc.dart';
-import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/radio/station_bloc.dart';
 import 'package:music_player/src/bloc/radio/station_event.dart';
-import 'package:music_player/src/ui/ArtistTab.dart';
+import 'package:music_player/src/ui/artistTab.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/genreTab.dart';
 import 'package:music_player/src/ui/homeTab.dart';
@@ -19,20 +17,21 @@ import 'package:music_player/src/ui/onlineRadioTab.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 
-import 'package:http/http.dart' as http;
-
 class Home extends StatefulWidget {
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
-  ApplicationBloc bloc;
   FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  TextEditingController _searchQueryController = TextEditingController();
+  bool _isSearching = false;
+  String searchQuery = "";
+  StationBloc _stationBolc;
 
   @override
   Widget build(BuildContext context) {
-    //bloc ??= BlocProvider.of<ApplicationBloc>(context);
+    _stationBolc ??= BlocProvider.of(context);
 
     return StreamBuilder<bool>(
         stream: AudioService.runningStream,
@@ -57,17 +56,30 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     backgroundColor: Colors.transparent,
                     elevation: 0.0,
                     actions: [
-                      IconButton(
-                        icon: Icon(Icons.search),
-                        onPressed: () => print("Search"),
-                        color: Color(0xFF55889d),
-                      )
+                      _isSearching
+                          ? IconButton(
+                              icon: Icon(Icons.close),
+                              onPressed: () => setState(() {
+                                _isSearching = false;
+                                searchQuery = "";
+                              }),
+                            )
+                          : IconButton(
+                              icon: Icon(Icons.search),
+                              onPressed: () => setState(() {
+                                _isSearching = true;
+                              }),
+                              color: Color(0xFF55889d),
+                            )
                     ],
-                    leading: IconButton(
-                      color: Color(0xFF586a78),
-                      icon: Icon(Icons.sort),
-                      onPressed: () {},
-                    ),
+                    leading: _isSearching
+                        ? Icon(Icons.search)
+                        : IconButton(
+                            color: Color(0xFF586a78),
+                            icon: Icon(Icons.sort),
+                            onPressed: () {},
+                          ),
+                    title: _isSearching ? _buildSearchField() : Container(),
                   ),
                   body: Container(
                     decoration: BoxDecoration(
@@ -84,7 +96,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16.0, 90, 16, 0),
                           child: Text(
-                            "Discover",
+                            _isSearching ? "Search" : "Discover",
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 38,
@@ -134,30 +146,37 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 ArtistTab(
-                                  bloc: bloc,
                                   bottomPadding: paddingBottom,
+                                  data: _isSearching
+                                      ? audioQuery.searchArtists(
+                                          query: searchQuery)
+                                      : audioQuery.getArtists(),
                                 ),
                                 AlbumTab(
-                                  bloc: bloc,
-                                  albumListFuture: audioQuery.getAlbums(),
+                                  albumListFuture: _isSearching
+                                      ? audioQuery.searchAlbums(
+                                          query: searchQuery)
+                                      : audioQuery.getAlbums(),
                                   bottomPadding: paddingBottom,
                                 ),
                                 GenreTab(
-                                  bloc: bloc,
                                   bottomPadding: paddingBottom,
+                                  genreData: _isSearching
+                                      ? audioQuery.searchGenres(
+                                          query: searchQuery)
+                                      : audioQuery.getGenres(),
                                 ),
                                 SongTab(
                                   audioQuery: audioQuery,
-                                  songListFuture: audioQuery.getSongs(),
+                                  songListFuture: _isSearching
+                                      ? audioQuery.searchSongs(
+                                          query: searchQuery)
+                                      : audioQuery.getSongs(),
                                   bottomPadding: paddingBottom,
                                 ),
-                                BlocProvider(
-                                  create: (context) =>
-                                      StationBloc(httpClient: http.Client())
-                                        ..add(StationFetched()),
-                                  child: OnlineRadioTabSearch(
-                                    bottomPadding: paddingBottom,
-                                  ),
+                                OnlineRadioTabSearch(
+                                  bottomPadding: paddingBottom,
+                                  search: searchQuery,
                                 )
                               ],
                             ),
@@ -170,6 +189,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             BottomPlayerBar(audioQuery: audioQuery)
           ]);
         });
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchQueryController,
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: "Search ...",
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: Colors.white),
+      ),
+      style: TextStyle(color: Colors.white, fontSize: 16.0),
+      onChanged: (query) => updateSearchQuery(query),
+    );
+  }
+
+  void updateSearchQuery(String newQuery) {
+    setState(() {
+      searchQuery = newQuery;
+    });
+    if (_stationBolc != null) {
+      _stationBolc.add(StationSearch(search: newQuery));
+    }
   }
 }
 

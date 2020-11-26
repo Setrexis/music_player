@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:music_player/src/bloc/AplicationBloc.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 
 class AlbumTab extends StatefulWidget {
-  final ApplicationBloc bloc;
   final Future albumListFuture;
   final bool removePaddingTop;
   final double bottomPadding;
 
   const AlbumTab(
       {Key key,
-      this.bloc,
       this.albumListFuture,
       this.removePaddingTop = true,
       this.bottomPadding})
@@ -61,30 +58,42 @@ class _AlbumTabState extends State<AlbumTab> {
                               audioQuery: audioQuery,
                               songListFuture: audioQuery.getSongsFromAlbum(
                                   albumId: album.id),
+                              removePaddingTop: false,
                             ),
                           ),
                         ));
                       },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      child: Wrap(
+                        direction: Axis.horizontal,
+                        alignment: WrapAlignment.center,
+                        runAlignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          AlbumArtworkImage(
-                              album.id, album.albumArt, ResourceType.ALBUM,
-                              audioQuery: audioQuery),
-                          Text(
-                            album.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
+                          Container(
+                            child: AlbumArtworkImage(
+                                album.id, album.albumArt, ResourceType.ALBUM,
+                                audioQuery: audioQuery),
                           ),
-                          Text(
-                            album.artist + " | " + album.numberOfSongs,
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
+                          Column(
+                            children: [
+                              Text(
+                                album.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                album.artist +
+                                    " | " +
+                                    album.numberOfSongs +
+                                    " Songs",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           )
                         ],
                       ),

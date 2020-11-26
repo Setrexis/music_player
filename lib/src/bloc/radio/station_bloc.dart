@@ -95,6 +95,7 @@ class StationBloc extends Bloc<StationEvent, StationState> {
       return data.map((rawPost) {
         return Station(
             id: rawPost.getAttribute('id'),
+            rid: "r" + rawPost.getAttribute('id'),
             title: rawPost.getAttribute('name'),
             genre: rawPost.getAttribute('genre'),
             ct: rawPost.getAttribute('genre'),

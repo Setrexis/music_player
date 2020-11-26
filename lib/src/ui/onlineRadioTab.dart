@@ -12,8 +12,10 @@ import 'package:xml/xml.dart';
 
 class OnlineRadioTabSearch extends StatefulWidget {
   final double bottomPadding;
+  final String search;
 
-  const OnlineRadioTabSearch({Key key, this.bottomPadding}) : super(key: key);
+  const OnlineRadioTabSearch({Key key, this.bottomPadding, this.search})
+      : super(key: key);
   @override
   _OnlineRadioTabSearchState createState() => _OnlineRadioTabSearchState();
 }
@@ -24,6 +26,7 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
   final _scrollThreshold = 200.0;
   StationBloc _postBloc;
   PlayerBloc _playerBloc;
+  bool search;
 
   @override
   void initState() {
@@ -44,7 +47,9 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
     if (maxScroll - currentScroll <= _scrollThreshold) {
-      _postBloc.add(StationFetched());
+      search
+          ? _postBloc.add(StationSearch(search: widget.search))
+          : _postBloc.add(StationFetched());
     }
   }
 

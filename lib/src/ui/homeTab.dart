@@ -9,6 +9,7 @@ import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeTab extends StatefulWidget {
   final double bottomPadding;
@@ -21,9 +22,12 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  PlayerBloc _playerBloc;
 
   @override
   Widget build(BuildContext context) {
+    _playerBloc ??= BlocProvider.of<PlayerBloc>(context);
+
     return MediaQuery.removePadding(
         context: context,
         removeTop: true,
@@ -43,29 +47,18 @@ class _HomeTabState extends State<HomeTab> {
 
               if (snapshot.data.length == 0 ||
                   snapshot.data
-                          .where((element) =>
-                              element.name == "recently-played" ||
-                              element.name == "Favoriten")
-                          .length <
-                      2) {
+                          .where((element) => element.name == "Favoriten")
+                          .length !=
+                      1) {
                 FlutterAudioQuery.createPlaylist(playlistName: "Favoriten");
-                FlutterAudioQuery.createPlaylist(
-                    playlistName: "recently-played");
                 return Center(
                   child: CircularProgressIndicator(),
                 );
               }
 
-              List<PlaylistInfo> playlistInfos = snapshot.data
-                  .where((element) => element.name != "recently-played")
-                  .toList();
+              List<PlaylistInfo> playlistInfos = snapshot.data;
 
-              PlaylistInfo recentlyPlayed = snapshot.data
-                  .firstWhere((element) => element.name == "recently-played");
-
-              return Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              return ListView(
                   children: [
                     Container(
                       height: 250,
@@ -257,7 +250,14 @@ class _HomeTabState extends State<HomeTab> {
                                                     Color(0xFF64a0a8),
                                                     Color(0xFF3383a4),
                                                   ]),
-                                              onpresss: () {},
+                                              onpresss: () async {
+                                                var playlist = await audioQuery
+                                                    .getSongsFromPlaylist(
+                                                        playlist: playlistInfos[
+                                                            index]);
+                                                _playerBloc.add(PlayerPlay(
+                                                    playlist.first, playlist));
+                                              },
                                             ),
                                           ],
                                         ),
@@ -303,7 +303,6 @@ class _HomeTabState extends State<HomeTab> {
                     RecentlyPlayedSongsList(
                       bottomPadding: widget.bottomPadding,
                       playerBloc: BlocProvider.of<PlayerBloc>(context),
-                      playlist: recentlyPlayed,
                     ),
                   ]);
             },
@@ -313,20 +312,40 @@ class _HomeTabState extends State<HomeTab> {
 }
 
 // ignore: must_be_immutable
-class RecentlyPlayedSongsList extends StatelessWidget {
-  final PlaylistInfo playlist;
-  FlutterAudioQuery audioQuery = FlutterAudioQuery();
+class RecentlyPlayedSongsList extends StatefulWidget {
   final double bottomPadding;
   final PlayerBloc playerBloc;
 
-  RecentlyPlayedSongsList(
-      {Key key, this.bottomPadding, this.playerBloc, this.playlist})
+  RecentlyPlayedSongsList({Key key, this.bottomPadding, this.playerBloc})
       : super(key: key);
+
+  @override
+  _RecentlyPlayedSongsListState createState() =>
+      _RecentlyPlayedSongsListState();
+}
+
+class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
+  FlutterAudioQuery audioQuery = FlutterAudioQuery();
+
+  Future songs;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    SharedPreferences.getInstance().then((instance) {
+      List<String> ids = instance.getStringList("recentlyplayed");
+      if (ids == null) {
+        songs = Future<List<SongInfo>>.value([]);
+      } else
+        songs = audioQuery.getSongsById(ids: ids);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<SongInfo>>(
-        future: audioQuery.getSongsFromPlaylist(playlist: playlist),
+        future: songs,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
@@ -334,15 +353,17 @@ class RecentlyPlayedSongsList extends StatelessWidget {
 
           if (snapshot.data.isEmpty) {
             return Center(
-              child: Text("You never played musik!"),
+              child: Text("You never played musik!",
+                  style: TextStyle(
+                    color: Colors.white,
+                  )),
             );
           }
 
           List<SongInfo> songs = snapshot.data;
-          return Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              shrinkWrap: false,
+          return ListView.builder(
+              padding: EdgeInsets.only(bottom: widget.bottomPadding),
+              shrinkWrap: true,
               itemBuilder: (context, index) {
                 SongInfo song = songs[index];
                 return Padding(
@@ -357,7 +378,8 @@ class RecentlyPlayedSongsList extends StatelessWidget {
                             stops: [0.0, 1.0],
                             tileMode: TileMode.clamp)),
                     child: InkWell(
-                      onTap: () => playerBloc.add(PlayerPlay(song, songs)),
+                      onTap: () =>
+                          widget.playerBloc.add(PlayerPlay(song, songs)),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),
@@ -414,7 +436,6 @@ class RecentlyPlayedSongsList extends StatelessWidget {
                 );
               },
               itemCount: songs.length,
-            ),
           );
         });
   }

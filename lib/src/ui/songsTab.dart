@@ -19,7 +19,7 @@ class SongTab extends StatefulWidget {
       this.songListFuture,
       this.audioQuery,
       this.removePaddingTop = true,
-      this.bottomPadding})
+      this.bottomPadding = 0.0})
       : super(key: key);
 
   @override

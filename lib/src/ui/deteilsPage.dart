@@ -61,7 +61,10 @@ class _DetailPageState extends State<DetailPage> {
                             end: Alignment.bottomCenter,
                             stops: [0.0, 1.0],
                             tileMode: TileMode.clamp)),
-                    child: widget.child,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 90.0),
+                      child: widget.child,
+                    ),
                   ),
                 ),
                 BottomPlayerBar(audioQuery: FlutterAudioQuery())

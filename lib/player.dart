@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
@@ -19,6 +20,7 @@ class PlayerSceen extends StatefulWidget {
 class _PlayerSceenState extends State<PlayerSceen>
     with SingleTickerProviderStateMixin {
   AnimationController _animationController;
+  StreamSubscription playinglisterner;
   final FlutterAudioQuery audioQuery = FlutterAudioQuery();
 
   @override
@@ -27,14 +29,18 @@ class _PlayerSceenState extends State<PlayerSceen>
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 200));
 
-    AudioService.playbackState.playing
-        ? _animationController.forward()
-        : _animationController.reverse();
+    playinglisterner = AudioService.playbackStateStream.listen((event) {
+      if (event.playing)
+        _animationController.forward();
+      else
+        _animationController.reverse();
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
+    playinglisterner.cancel();
     _animationController.dispose();
   }
 
@@ -95,7 +101,7 @@ class _PlayerSceenState extends State<PlayerSceen>
                     child: Center(
                       child: Container(
                         child: AlbumArtworkImage(
-                          snapshot.data.genre,
+                          snapshot.data.genre.replaceAll("r", ""),
                           null,
                           ResourceType.SONG,
                           borderRadius: 400,
@@ -161,9 +167,6 @@ class _PlayerSceenState extends State<PlayerSceen>
                               child: GradientButton(
                                 onpresss: () {
                                   AudioService.playbackState.playing
-                                      ? _animationController.reverse()
-                                      : _animationController.forward();
-                                  AudioService.playbackState.playing
                                       ? AudioService.pause()
                                       : AudioService.play();
                                 },
@@ -205,6 +208,7 @@ class _PlayerSceenState extends State<PlayerSceen>
                               icon: Icon(Icons.whatshot_outlined),
                               onPressed: () => {
                                 audioQuery.getPlaylists().then((value) async {
+                                  if (snapshot.data.genre.contains("r")) return;
                                   List<SongInfo> i =
                                       await audioQuery.getSongsById(
                                           ids: {snapshot.data.genre}.toList());

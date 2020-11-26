@@ -2,24 +2,30 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/home.dart';
 import 'package:music_player/player.dart';
 import 'package:music_player/src/Utility.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
+import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 
 class SongTab extends StatefulWidget {
   final Future songListFuture;
   final FlutterAudioQuery audioQuery;
   final bool removePaddingTop;
   final double bottomPadding;
+  final bool searching;
+  final Function resetSearch;
 
   const SongTab(
       {Key key,
       this.songListFuture,
       this.audioQuery,
       this.removePaddingTop = true,
-      this.bottomPadding = 0.0})
+      this.bottomPadding = 0.0,
+      this.searching,
+      this.resetSearch})
       : super(key: key);
 
   @override
@@ -39,11 +45,28 @@ class _SongTabState extends State<SongTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return FutureBuilder<List<SongInfo>>(
       future: widget.songListFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.data.isEmpty) {
+          if (widget.searching)
+            return NoDataWidget(
+                title: "Not the Song you've been looking for?",
+                subtitle: "We could not find a song matching your search.",
+                actionIcon: Icon(Icons.search),
+                action: widget.resetSearch,
+                actionText: "New Search",
+                icon: Icons.not_listed_location_outlined);
+          else
+            return NoDataWidget(
+              icon: Icons.music_off,
+              title: "Ups!",
+              subtitle: "We could not find any musik.",
+            );
         }
 
         return MediaQuery.removePadding(

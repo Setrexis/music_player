@@ -3,12 +3,20 @@ import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
+import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 
 class GenreTab extends StatefulWidget {
   final double bottomPadding;
   final Future genreData;
+  final Function resetSearch;
+  final bool searching;
 
-  const GenreTab({Key key, this.bottomPadding, this.genreData})
+  const GenreTab(
+      {Key key,
+      this.bottomPadding,
+      this.genreData,
+      this.resetSearch,
+      this.searching})
       : super(key: key);
 
   @override
@@ -28,6 +36,23 @@ class _GenreTabState extends State<GenreTab> {
             return Center(
               child: CircularProgressIndicator(),
             );
+          }
+
+          if (snapshot.data.isEmpty) {
+            if (widget.searching)
+              return NoDataWidget(
+                  title: "Not the Genre you've been looking for?",
+                  subtitle: "We could not find a genre matching your search.",
+                  actionIcon: Icon(Icons.search),
+                  action: widget.resetSearch,
+                  actionText: "New Search",
+                  icon: Icons.not_listed_location_outlined);
+            else
+              return NoDataWidget(
+                icon: Icons.music_off,
+                title: "Ups!",
+                subtitle: "We could not find any genres.",
+              );
           }
 
           return MediaQuery.removePadding(

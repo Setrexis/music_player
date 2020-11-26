@@ -61,7 +61,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               icon: Icon(Icons.close),
                               onPressed: () => setState(() {
                                 _isSearching = false;
-                                searchQuery = "";
+                                _searchQueryController.clear();
                               }),
                             )
                           : IconButton(
@@ -151,6 +151,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                       ? audioQuery.searchArtists(
                                           query: searchQuery)
                                       : audioQuery.getArtists(),
+                                  resetSearch: resetSearchQuery,
+                                  searching: _isSearching,
                                 ),
                                 AlbumTab(
                                   albumListFuture: _isSearching
@@ -158,6 +160,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                           query: searchQuery)
                                       : audioQuery.getAlbums(),
                                   bottomPadding: paddingBottom,
+                                  resetSearch: resetSearchQuery,
+                                  searching: _isSearching,
                                 ),
                                 GenreTab(
                                   bottomPadding: paddingBottom,
@@ -165,6 +169,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                       ? audioQuery.searchGenres(
                                           query: searchQuery)
                                       : audioQuery.getGenres(),
+                                  resetSearch: resetSearchQuery,
+                                  searching: _isSearching,
                                 ),
                                 SongTab(
                                   audioQuery: audioQuery,
@@ -173,6 +179,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                           query: searchQuery)
                                       : audioQuery.getSongs(),
                                   bottomPadding: paddingBottom,
+                                  searching: _isSearching,
+                                  resetSearch: resetSearchQuery,
                                 ),
                                 OnlineRadioTabSearch(
                                   bottomPadding: paddingBottom,
@@ -209,9 +217,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     setState(() {
       searchQuery = newQuery;
     });
-    if (_stationBolc != null) {
-      _stationBolc.add(StationSearch(search: newQuery));
-    }
+    _stationBolc.add(StationSearch(search: newQuery));
+  }
+
+  void resetSearchQuery() {
+    _searchQueryController.clear();
   }
 }
 
@@ -256,36 +266,6 @@ class SongListWidget extends StatelessWidget {
   }
 }
 
-class NoDataWidget extends StatelessWidget {
-  final String title;
-
-  NoDataWidget({this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          IconButton(
-            iconSize: 120,
-            onPressed: null,
-            icon: Icon(Icons.not_interested),
-          ),
-          Text(
-            title,
-            maxLines: 1,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16.0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class CircleTabIndicator extends Decoration {
   final BoxPainter _painter;
 
@@ -312,63 +292,3 @@ class _CirclePainter extends BoxPainter {
     canvas.drawCircle(circleOffset, radius, _paint);
   }
 }
-
-//// code snipsets
-/*FutureBuilder(
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              List<SongInfo> songList =
-                  snapshot.data; //.where((a) => a.isMusik).toList();
-              return ListView.builder(
-                itemBuilder: (context, index) => ListTile(
-                  leading: (songList[index].albumArtwork == null)
-                      ? FutureBuilder<Uint8List>(
-                          future: audioQuery.getArtwork(
-                              type: ResourceType.SONG, id: songList[index].id),
-                          builder: (_, snapshot) {
-                            if (snapshot.data == null || !snapshot.hasData)
-                              return Center(
-                                child: CircularProgressIndicator(),
-                              );
-
-                            if (snapshot.data.isEmpty) {
-                              return Icon(Icons.music_note);
-                            }
-
-                            return Container(
-                              height: 80,
-                              width: 80,
-                              child: Image.memory(
-                                snapshot.data,
-                              ),
-                            );
-                          })
-                      : Image.file(File(songList[index].albumArtwork)),
-                  title: Text(songList[index].title),
-                  subtitle: Text(songList[index].artist),
-                ),
-              );
-            } else {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-          },
-          future: albumList,
-        ),
-              StreamBuilder<List<SongInfo>>(
-                  stream: bloc.songStream,
-                  builder: (context, snapshot) {
-                    print(snapshot.data);
-                    if (snapshot.hasError)
-                      return Center(child: Text("${snapshot.error}"));
-
-                    if (!snapshot.hasData)
-                      return Center(child: CircularProgressIndicator());
-
-                    return (snapshot.data.isEmpty)
-                        ? NoDataWidget(
-                            title: "There are no Songs",
-                          )
-                        : SongListWidget(songList: snapshot.data);
-                  }));*/

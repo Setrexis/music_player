@@ -76,11 +76,6 @@ class _PlayerSceenState extends State<PlayerSceen>
             if (!snapshot.hasData) {
               return Container();
             }
-
-            if (!AudioService.running && !snapshot.hasData) {
-              print("when 2");
-            }
-
             final duration = snapshot.data.duration ?? Duration.zero;
 
             return Container(

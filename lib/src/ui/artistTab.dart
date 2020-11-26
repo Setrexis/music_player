@@ -4,12 +4,21 @@ import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
+import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 
 class ArtistTab extends StatefulWidget {
   final double bottomPadding;
   final Future data;
+  final Function resetSearch;
+  final bool searching;
 
-  const ArtistTab({Key key, this.bottomPadding, this.data}) : super(key: key);
+  const ArtistTab(
+      {Key key,
+      this.bottomPadding,
+      this.data,
+      this.resetSearch,
+      this.searching})
+      : super(key: key);
 
   @override
   _ArtistTabState createState() => _ArtistTabState();
@@ -26,6 +35,24 @@ class _ArtistTabState extends State<ArtistTab> {
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.data.isEmpty) {
+              if (widget.searching)
+                return NoDataWidget(
+                    title: "Not the artist you've been looking for?",
+                    subtitle:
+                        "We could not find a artist matching your search.",
+                    actionIcon: Icon(Icons.search),
+                    action: widget.resetSearch,
+                    actionText: "New Search",
+                    icon: Icons.not_listed_location_outlined);
+              else
+                return NoDataWidget(
+                  icon: Icons.music_off,
+                  title: "Ups!",
+                  subtitle: "We could not find any artists.",
+                );
             }
 
             List<ArtistInfo> artists = snapshot.data;

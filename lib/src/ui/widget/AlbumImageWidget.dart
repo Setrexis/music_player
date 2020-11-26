@@ -36,7 +36,7 @@ class AlbumArtworkImage extends StatelessWidget {
           builder: (_, snapshot) {
             if (snapshot.data == null || !snapshot.hasData)
               return Center(
-                child: CircularProgressIndicator(),
+                child: Container(child: Icon(Icons.music_note)),
               );
 
             if (snapshot.data.isEmpty) {

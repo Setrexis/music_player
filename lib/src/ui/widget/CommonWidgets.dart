@@ -227,3 +227,68 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
         });
   }
 }
+
+class NoDataWidget extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Function action;
+  final String actionText;
+  final Widget actionIcon;
+
+  NoDataWidget(
+      {this.title,
+      this.subtitle,
+      this.icon,
+      this.action,
+      this.actionText,
+      this.actionIcon})
+      : assert(title != null, icon != null);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.all(20),
+          ),
+          Icon(
+            icon,
+            size: 90,
+            color: Colors.grey,
+          ),
+          Text(
+            title,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20.0, color: Colors.white),
+          ),
+          Padding(
+            padding: EdgeInsets.all(3),
+          ),
+          subtitle != null
+              ? Text(
+                  subtitle,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16.0, color: Colors.white),
+                )
+              : Container(),
+          Padding(
+            padding: EdgeInsets.all(10),
+          ),
+          action != null
+              ? RaisedButton.icon(
+                  label: Text(actionText),
+                  icon: actionIcon,
+                  onPressed: action,
+                )
+              : Container(),
+        ],
+      ),
+    );
+  }
+}

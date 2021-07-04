@@ -408,7 +408,7 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      song.title!,
+                                      song.title,
                                       overflow: TextOverflow.clip,
                                       style: TextStyle(
                                           fontSize: 16,
@@ -416,7 +416,7 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                                           color: Colors.white),
                                     ),
                                     Text(
-                                      song.artist!,
+                                      song.artist,
                                       style:
                                           TextStyle(color: Color(0xFF4e606e)),
                                     ),

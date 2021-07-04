@@ -8,9 +8,6 @@ import 'package:music_player/src/bloc/player/player_state.dart';
 import 'package:bloc/bloc.dart';
 
 import 'dart:async';
-
-import 'package:music_player/src/bloc/radio/station.dart';
-import 'package:music_player/src/net/radio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void _audioPlayerTaskEntrypoint() async {
@@ -54,30 +51,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   Stream<PlayerState> mapEventToState(PlayerEvent event) async* {
     final PlayerState currentState = state;
 
-    if (event is PlayerPlayRadio) {
-      try {
-        if (currentState is PlayerEmpty) {
-          final songInfo = await _loadStation(event.station);
-          yield PlayerInitial(songInfo.items.first, true);
-          await _audioManager(songInfo);
-          yield PlayerPlaying(null, songInfo.items.first, true);
-          final playlist = await _loadStations(event.stations, event.station);
-          await _addPlaylistToQueue(playlist.items);
-          yield PlayerPlaying(playlist.items, songInfo.items.first, true);
-          return;
-        }
-        if (currentState is PlayerPlaying) {
-          final songInfo = await _loadStation(event.station);
-          yield PlayerInitial(songInfo.items.first, true);
-          final playlist = await _loadStations(event.stations, event.station);
-          await AudioService.updateQueue(playlist.items);
-          yield PlayerPlaying(playlist.items, songInfo.items.first, true);
-          return;
-        }
-      } catch (_) {
-        yield PlayerFailure();
-      }
-    } else if (event is PlayerPlay) {
+    if (event is PlayerPlay) {
       try {
         if (currentState is PlayerEmpty) {
           final songInfo = _loadMediaItem(event.songInfo);
@@ -138,7 +112,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           title: song.title,
           artist: song.artist,
           genre: song.composer,
-          artUri: Uri.dataFromString(song.artwork != null ? song.artwork! : ""),
+          artUri:
+              song.artwork != null ? Uri.dataFromString(song.artwork!) : null,
           duration: Duration(milliseconds: song.duration)));
     }
 
@@ -158,51 +133,14 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   static MediaLibrary _loadMediaItem(SongModel first) {
     List<MediaItem> playlist = [];
     playlist.add(MediaItem(
-        id: first.uri,
+        id: first.id.toString(),
         album: first.album,
         title: first.title,
         artist: first.artist,
-        genre: first.id.toString(),
-        artUri: Uri.dataFromString(first.artwork != null ? first.artwork! : ""),
+        genre: first.composer,
+        artUri:
+            first.artwork != null ? Uri.dataFromString(first.artwork!) : null,
         duration: Duration(milliseconds: first.duration)));
-    return MediaLibrary.from(playlist);
-  }
-
-  static Future<MediaLibrary> _loadStations(
-      List<Station> streams, Station stream) async {
-    List<MediaItem> playlist = [];
-
-    for (Station song in streams) {
-      playlist.add(MediaItem(
-          id: await OnlineRadio.getStreamPath(song.id),
-          album: song.id ?? "",
-          title: song.title!,
-          artist: song.ct ?? "",
-          genre: song.rid,
-          artUri: Uri.dataFromString(song.logo ?? ""),
-          duration: Duration(milliseconds: 0)));
-    }
-
-    int i = playlist.indexWhere((element) => element.genre == stream.rid);
-
-    if (i != null) {
-      playlist.removeAt(i);
-    }
-
-    return MediaLibrary.from(playlist);
-  }
-
-  static Future<MediaLibrary> _loadStation(Station stream) async {
-    List<MediaItem> playlist = [];
-
-    playlist.add(MediaItem(
-        id: await OnlineRadio.getStreamPath(stream.id),
-        album: stream.id ?? "",
-        title: stream.title!,
-        artist: stream.ct ?? "",
-        genre: stream.rid,
-        artUri: Uri.dataFromString(stream.logo ?? ""),
-        duration: Duration(milliseconds: 0)));
     return MediaLibrary.from(playlist);
   }
 }

@@ -6,13 +6,10 @@ import 'dart:ui';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/src/bloc/radio/station_bloc.dart';
-import 'package:music_player/src/bloc/radio/station_event.dart';
 import 'package:music_player/src/ui/artistTab.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/genreTab.dart';
 import 'package:music_player/src/ui/homeTab.dart';
-import 'package:music_player/src/ui/onlineRadioTab.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -26,11 +23,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   TextEditingController _searchQueryController = TextEditingController();
   bool _isSearching = false;
   String searchQuery = "";
-  StationBloc? _stationBolc;
 
   @override
   Widget build(BuildContext context) {
-    _stationBolc ??= BlocProvider.of(context);
 
     return StreamBuilder<bool>(
         stream: AudioService.runningStream,
@@ -182,10 +177,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                   searching: _isSearching,
                                   resetSearch: resetSearchQuery,
                                 ),
-                                OnlineRadioTabSearch(
-                                  bottomPadding: paddingBottom,
-                                  search: searchQuery,
-                                )
                               ],
                             ),
                           ),
@@ -217,7 +208,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     setState(() {
       searchQuery = newQuery;
     });
-    _stationBolc!.add(StationSearch(search: newQuery));
   }
 
   void resetSearchQuery() {

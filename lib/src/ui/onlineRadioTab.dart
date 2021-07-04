@@ -11,10 +11,10 @@ import 'package:music_player/src/Utility.dart';
 import 'package:xml/xml.dart';
 
 class OnlineRadioTabSearch extends StatefulWidget {
-  final double bottomPadding;
-  final String search;
+  final double? bottomPadding;
+  final String? search;
 
-  const OnlineRadioTabSearch({Key key, this.bottomPadding, this.search})
+  const OnlineRadioTabSearch({Key? key, this.bottomPadding, this.search})
       : super(key: key);
   @override
   _OnlineRadioTabSearchState createState() => _OnlineRadioTabSearchState();
@@ -24,9 +24,9 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
   final OnlineRadio r = OnlineRadio();
   final _scrollController = ScrollController();
   final _scrollThreshold = 200.0;
-  StationBloc _postBloc;
-  PlayerBloc _playerBloc;
-  bool search;
+  late StationBloc _postBloc;
+  PlayerBloc? _playerBloc;
+  late bool search;
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
     final currentScroll = _scrollController.position.pixels;
     if (maxScroll - currentScroll <= _scrollThreshold) {
       search
-          ? _postBloc.add(StationSearch(search: widget.search))
+          ? _postBloc.add(StationSearch(search: widget.search!))
           : _postBloc.add(StationFetched());
     }
   }
@@ -68,7 +68,7 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
         }
 
         if (state is StationSuccess) {
-          if (state.station.isEmpty) {
+          if (state.station!.isEmpty) {
             return Center(
               child: Text('no stations found'),
             );
@@ -80,17 +80,17 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: ListView.builder(
-                itemCount: state.hasReachedMax
-                    ? state.station.length
-                    : state.station.length + 1,
+                itemCount: state.hasReachedMax!
+                    ? state.station!.length
+                    : state.station!.length + 1,
                 controller: _scrollController,
                 shrinkWrap: false,
-                padding: EdgeInsets.only(bottom: widget.bottomPadding),
+                padding: EdgeInsets.only(bottom: widget.bottomPadding!),
                 itemBuilder: (context, index) {
-                  return index >= state.station.length
+                  return index >= state.station!.length
                       ? BottomLoader()
                       : StationWidget(
-                          station: state.station[index],
+                          station: state.station![index],
                           stations: state.station,
                           index: index,
                           playerBloc: _playerBloc,
@@ -100,6 +100,8 @@ class _OnlineRadioTabSearchState extends State<OnlineRadioTabSearch> {
             ),
           );
         }
+
+        return Container();
       },
     );
   }
@@ -125,13 +127,13 @@ class BottomLoader extends StatelessWidget {
 
 class StationWidget extends StatelessWidget {
   final Station station;
-  final List<Station> stations;
-  final PlayerBloc playerBloc;
-  final int index;
+  final List<Station>? stations;
+  final PlayerBloc? playerBloc;
+  final int? index;
 
   const StationWidget(
-      {Key key,
-      @required this.station,
+      {Key? key,
+      required this.station,
       this.stations,
       this.playerBloc,
       this.index})
@@ -151,14 +153,14 @@ class StationWidget extends StatelessWidget {
                 stops: [0.0, 1.0],
                 tileMode: TileMode.clamp)),
         child: InkWell(
-          onTap: () => playerBloc.add(PlayerPlayRadio(
+          onTap: () => playerBloc!.add(PlayerPlayRadio(
               station,
-              stations
+              stations!
                   .getRange(
-                      index,
-                      index + 10 < stations.length
-                          ? index + 10
-                          : stations.length)
+                      index!,
+                      index! + 10 < stations!.length
+                          ? index! + 10
+                          : stations!.length)
                   .toList())),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -174,7 +176,7 @@ class StationWidget extends StatelessWidget {
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(11),
                           child: Image.network(
-                            station.logo,
+                            station.logo!,
                             errorBuilder: (context, error, stackTrace) =>
                                 Icon(Icons.radio),
                           ),
@@ -201,7 +203,7 @@ class StationWidget extends StatelessWidget {
                       Container(
                         width: MediaQuery.of(context).size.width * 0.65,
                         child: Text(
-                          station.ct ?? station.genre,
+                          station.ct ?? station.genre!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: Color(0xFF4e606e)),

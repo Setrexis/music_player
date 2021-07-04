@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/player.dart';
 import 'package:music_player/src/Utility.dart';
@@ -11,25 +10,25 @@ import 'package:music_player/src/bloc/player/player_state.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 
 class GradientButton extends StatelessWidget {
-  final Function onpresss;
-  final Gradient gradient;
+  final Function? onpresss;
+  final Gradient? gradient;
   final Widget child;
   final double elevation;
-  final ShapeBorder shape;
+  final ShapeBorder? shape;
 
   const GradientButton({
-    Key key,
+    Key? key,
     this.onpresss,
     this.gradient,
     this.elevation = 2.0,
-    @required this.child,
+    required this.child,
     this.shape,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return RaisedButton(
-      onPressed: onpresss,
+      onPressed: onpresss as void Function()?,
       elevation: elevation,
       padding: EdgeInsets.all(0),
       shape: shape,
@@ -47,11 +46,8 @@ class GradientButton extends StatelessWidget {
 
 class BottomPlayerBar extends StatefulWidget {
   const BottomPlayerBar({
-    Key key,
-    @required this.audioQuery,
+    Key? key,
   }) : super(key: key);
-
-  final FlutterAudioQuery audioQuery;
 
   @override
   _BottomPlayerBarState createState() => _BottomPlayerBarState();
@@ -59,8 +55,8 @@ class BottomPlayerBar extends StatefulWidget {
 
 class _BottomPlayerBarState extends State<BottomPlayerBar>
     with TickerProviderStateMixin {
-  AnimationController animationController;
-  StreamSubscription playing;
+  AnimationController? animationController;
+  StreamSubscription? playing;
 
   @override
   void dispose() {
@@ -72,7 +68,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<MediaItem>(
+    return StreamBuilder<MediaItem?>(
         stream: AudioService.currentMediaItemStream,
         builder: (context, snapshot) {
           return BlocBuilder<PlayerBloc, PlayerState>(
@@ -81,7 +77,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
               print("What up!");
               return Container();
             }
-            MediaItem mediaItem;
+            MediaItem? mediaItem;
             bool radio = true;
             if (state is PlayerInitial) {
               mediaItem = state.curruentMediaItem;
@@ -98,9 +94,9 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                 vsync: this, duration: Duration(milliseconds: 250));
             playing = AudioService.playbackStateStream.listen((event) {
               if (event.playing)
-                animationController.reverse();
+                animationController!.reverse();
               else
-                animationController.forward();
+                animationController!.forward();
             });
             return Positioned(
               bottom: 0,
@@ -108,9 +104,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
               right: 0,
               height: 90,
               child: AlbumArtBackground(
-                audioQuery: widget.audioQuery,
-                id: mediaItem.artUri,
-                type: ResourceType.ALBUM,
+                id: mediaItem.id,
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -145,7 +139,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      mediaItem.title ?? "",
+                                      mediaItem.title,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                           fontSize: 16,
@@ -193,9 +187,9 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                                                         Color>(Colors.white),
                                                 value: snapshot1.data == null
                                                     ? 0
-                                                    : snapshot1.data
+                                                    : snapshot1.data!
                                                             .inMilliseconds /
-                                                        mediaItem.duration
+                                                        mediaItem!.duration!
                                                             .inMilliseconds,
                                               );
                                             }),
@@ -208,7 +202,7 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
                                         },
                                         icon: AnimatedIcon(
                                           icon: AnimatedIcons.pause_play,
-                                          progress: animationController,
+                                          progress: animationController!,
                                           size: 25,
                                           color: Colors.white,
                                         ),
@@ -230,20 +224,19 @@ class _BottomPlayerBarState extends State<BottomPlayerBar>
 
 class NoDataWidget extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final IconData icon;
-  final Function action;
-  final String actionText;
-  final Widget actionIcon;
+  final String? subtitle;
+  final IconData? icon;
+  final Function? action;
+  final String? actionText;
+  final Widget? actionIcon;
 
   NoDataWidget(
-      {this.title,
+      {required this.title,
       this.subtitle,
       this.icon,
       this.action,
       this.actionText,
-      this.actionIcon})
-      : assert(title != null, icon != null);
+      this.actionIcon});
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +264,7 @@ class NoDataWidget extends StatelessWidget {
           ),
           subtitle != null
               ? Text(
-                  subtitle,
+                  subtitle!,
                   maxLines: 1,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16.0, color: Colors.white),
@@ -282,9 +275,9 @@ class NoDataWidget extends StatelessWidget {
           ),
           action != null
               ? RaisedButton.icon(
-                  label: Text(actionText),
-                  icon: actionIcon,
-                  onPressed: action,
+                  label: Text(actionText!),
+                  icon: actionIcon!,
+                  onPressed: action as void Function()?,
                 )
               : Container(),
         ],

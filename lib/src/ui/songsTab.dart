@@ -1,6 +1,5 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/home.dart';
 import 'package:music_player/player.dart';
@@ -9,19 +8,18 @@ import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class SongTab extends StatefulWidget {
-  final Future songListFuture;
-  final FlutterAudioQuery audioQuery;
+  final Future? songListFuture;
   final bool removePaddingTop;
   final double bottomPadding;
-  final bool searching;
-  final Function resetSearch;
+  final bool? searching;
+  final Function? resetSearch;
 
   const SongTab(
-      {Key key,
+      {Key? key,
       this.songListFuture,
-      this.audioQuery,
       this.removePaddingTop = true,
       this.bottomPadding = 0.0,
       this.searching,
@@ -34,7 +32,7 @@ class SongTab extends StatefulWidget {
 
 class _SongTabState extends State<SongTab> {
   String curruntSong = AudioService.currentMediaItem?.genre ?? "0";
-  PlayerBloc _playerBloc;
+  late PlayerBloc _playerBloc;
 
   @override
   void initState() {
@@ -45,15 +43,15 @@ class _SongTabState extends State<SongTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<SongInfo>>(
-      future: widget.songListFuture,
+    return FutureBuilder<List<SongModel>>(
+      future: widget.songListFuture?.then((value) => value as List<SongModel>),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
 
-        if (snapshot.data.isEmpty) {
-          if (widget.searching)
+        if (snapshot.data!.isEmpty) {
+          if (widget.searching!)
             return NoDataWidget(
                 title: "Not the Song you've been looking for?",
                 subtitle: "We could not find a song matching your search.",
@@ -78,7 +76,7 @@ class _SongTabState extends State<SongTab> {
               shrinkWrap: false,
               padding: EdgeInsets.only(bottom: widget.bottomPadding),
               itemBuilder: (context, index) {
-                SongInfo song = snapshot.data[index];
+                SongModel song = snapshot.data![index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Container(
@@ -94,7 +92,7 @@ class _SongTabState extends State<SongTab> {
                       onTap: () {
                         _playerBloc.add(PlayerPlay(song, snapshot.data));
                         setState(() {
-                          curruntSong = song.id;
+                          curruntSong = song.id as String;
                         });
                       },
                       child: Padding(
@@ -109,9 +107,7 @@ class _SongTabState extends State<SongTab> {
                                 Container(
                                   width: 60,
                                   height: 60,
-                                  child: AlbumArtworkImage(song.id,
-                                      song.albumArtwork, ResourceType.SONG,
-                                      audioQuery: widget.audioQuery),
+                                  child: QueryArtworkWidget(id: song.id, type: ArtworkType.ALBUM, artwork: song.artwork, deviceSDK: _playerBloc.deviceModel!.sdk),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(left: 8.0),
@@ -139,10 +135,7 @@ class _SongTabState extends State<SongTab> {
                               ],
                             ),
                             Text(
-                              song.duration == null
-                                  ? Utility.parseToMinutesSeconds(0)
-                                  : Utility.parseToMinutesSeconds(
-                                      int.tryParse(song.duration)),
+                              Utility.parseToMinutesSeconds(song.duration),
                               style: TextStyle(color: Color(0xFF4e606e)),
                             ),
                           ],
@@ -152,7 +145,7 @@ class _SongTabState extends State<SongTab> {
                   ),
                 );
               },
-              itemCount: snapshot.data.length,
+              itemCount: snapshot.data!.length,
             ),
           ),
         );

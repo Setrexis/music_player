@@ -2,27 +2,26 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/Utility.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeTab extends StatefulWidget {
-  final double bottomPadding;
+  final double? bottomPadding;
 
-  const HomeTab({Key key, this.bottomPadding}) : super(key: key);
+  const HomeTab({Key? key, this.bottomPadding}) : super(key: key);
 
   @override
   _HomeTabState createState() => _HomeTabState();
 }
 
 class _HomeTabState extends State<HomeTab> {
-  FlutterAudioQuery audioQuery = FlutterAudioQuery();
-  PlayerBloc _playerBloc;
+  PlayerBloc? _playerBloc;
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +32,8 @@ class _HomeTabState extends State<HomeTab> {
         removeTop: true,
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: FutureBuilder<List<PlaylistInfo>>(
-            future: audioQuery.getPlaylists(),
+          child: FutureBuilder<List<PlaylistModel>?>(
+            future: OnAudioQuery().queryPlaylists(),
             builder: (context, snapshot) {
               print(snapshot);
               if (!snapshot.hasData) {
@@ -43,20 +42,21 @@ class _HomeTabState extends State<HomeTab> {
                 );
               }
 
-              print(snapshot.data.length);
+              print(snapshot.data!.length);
 
-              if (snapshot.data.length == 0 ||
-                  snapshot.data
-                          .where((element) => element.name == "Favoriten")
+              if (snapshot.data!.length == 0 ||
+                  snapshot.data!
+                          .where(
+                              (element) => element.playlistName == "Favoriten")
                           .length !=
                       1) {
-                FlutterAudioQuery.createPlaylist(playlistName: "Favoriten");
+                OnAudioQuery().createPlaylist("Favoriten");
                 return Center(
                   child: CircularProgressIndicator(),
                 );
               }
 
-              List<PlaylistInfo> playlistInfos = snapshot.data;
+              List<PlaylistModel> playlistInfos = snapshot.data!;
 
               return ListView(children: [
                 Container(
@@ -147,7 +147,7 @@ class _HomeTabState extends State<HomeTab> {
                         return Stack(
                           clipBehavior: Clip.none,
                           alignment: Alignment.centerLeft,
-                          children: [
+                          children: [/*
                             playlistInfos[index].memberIds.length > 2
                                 ? Positioned(
                                     left: left1 * 3,
@@ -157,7 +157,7 @@ class _HomeTabState extends State<HomeTab> {
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(25),
                                         child: AlbumArtworkImage(
-                                          playlistInfos[index].memberIds[2],
+                                          playlistInfos[index].memberIds![2],
                                           null,
                                           ResourceType.SONG,
                                           borderRadius: 25,
@@ -167,7 +167,7 @@ class _HomeTabState extends State<HomeTab> {
                                     ),
                                   )
                                 : Container(),
-                            playlistInfos[index].memberIds.length > 1
+                            playlistInfos[index].memberIds!.length > 1
                                 ? Positioned(
                                     left: left1 * 2,
                                     child: Container(
@@ -176,7 +176,7 @@ class _HomeTabState extends State<HomeTab> {
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(25),
                                         child: AlbumArtworkImage(
-                                          playlistInfos[index].memberIds[1],
+                                          playlistInfos[index].memberIds![1],
                                           null,
                                           ResourceType.SONG,
                                           borderRadius: 25,
@@ -186,14 +186,14 @@ class _HomeTabState extends State<HomeTab> {
                                     ),
                                   )
                                 : Container(),
-                            playlistInfos[index].memberIds.length > 0
+                            playlistInfos[index].memberIds!.length > 0
                                 ? Positioned(
                                     left: left1,
                                     child: Container(
                                       height: size1,
                                       width: size1,
                                       child: AlbumArtworkImage(
-                                        playlistInfos[index].memberIds[0],
+                                        playlistInfos[index].memberIds![0],
                                         null,
                                         ResourceType.SONG,
                                         borderRadius: 25,
@@ -201,7 +201,7 @@ class _HomeTabState extends State<HomeTab> {
                                       ),
                                     ),
                                   )
-                                : Container(),
+                                : Container(),*/
                             Container(
                               height: size,
                               width: size,
@@ -217,17 +217,14 @@ class _HomeTabState extends State<HomeTab> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          playlistInfos[index].name,
+                                          playlistInfos[index].playlistName,
                                           style: TextStyle(
                                               fontSize: 24,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white),
                                         ),
                                         Text(
-                                          playlistInfos[index]
-                                                  .memberIds
-                                                  .length
-                                                  .toString() +
+                                          playlistInfos[index].id.toString() +
                                               " Songs",
                                           style: TextStyle(
                                               fontSize: 16,
@@ -263,14 +260,14 @@ class _HomeTabState extends State<HomeTab> {
                                                 Color(0xFF64a0a8),
                                                 Color(0xFF3383a4),
                                               ]),
-                                          onpresss: () async {
+                                          onpresss: () async {/*
                                             var playlist = await audioQuery
                                                 .getSongsFromPlaylist(
                                                     playlist:
                                                         playlistInfos[index]);
-                                            _playerBloc.add(PlayerPlay(
+                                            _playerBloc!.add(PlayerPlay(
                                                 playlist.first, playlist));
-                                          },
+                                          */},
                                         ),
                                       ],
                                     ),
@@ -325,10 +322,10 @@ class _HomeTabState extends State<HomeTab> {
 
 // ignore: must_be_immutable
 class RecentlyPlayedSongsList extends StatefulWidget {
-  final double bottomPadding;
-  final PlayerBloc playerBloc;
+  final double? bottomPadding;
+  final PlayerBloc? playerBloc;
 
-  RecentlyPlayedSongsList({Key key, this.bottomPadding, this.playerBloc})
+  RecentlyPlayedSongsList({Key? key, this.bottomPadding, this.playerBloc})
       : super(key: key);
 
   @override
@@ -337,33 +334,31 @@ class RecentlyPlayedSongsList extends StatefulWidget {
 }
 
 class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
-  FlutterAudioQuery audioQuery = FlutterAudioQuery();
-
-  Future songs;
+  Future? songs;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     SharedPreferences.getInstance().then((instance) {
-      List<String> ids = instance.getStringList("recentlyplayed");
+      List<String>? ids = instance.getStringList("recentlyplayed");
       if (ids == null) {
-        songs = Future<List<SongInfo>>.value([]);
+        songs = Future<List<SongModel>>.value([]);
       } else
-        songs = audioQuery.getSongsById(ids: ids);
+        songs = OnAudioQuery().querySongsBy(SongsByType.ID, ids);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<SongInfo>>(
-        future: songs,
+    return FutureBuilder<List<SongModel>>(
+        future: songs?.then((value) => value as List<SongModel>),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.data.isEmpty) {
+          if (snapshot.data!.isEmpty) {
             return Center(
               child: Text("You never played musik!",
                   style: TextStyle(
@@ -372,12 +367,12 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
             );
           }
 
-          List<SongInfo> songs = snapshot.data.reversed.toList();
+          List<SongModel> songs = snapshot.data!.reversed.toList();
           return ListView.builder(
-            padding: EdgeInsets.only(bottom: widget.bottomPadding),
+            padding: EdgeInsets.only(bottom: widget.bottomPadding!),
             shrinkWrap: true,
             itemBuilder: (context, index) {
-              SongInfo song = songs[index];
+              SongModel song = songs[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5),
                 child: Container(
@@ -390,7 +385,8 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                           stops: [0.0, 1.0],
                           tileMode: TileMode.clamp)),
                   child: InkWell(
-                    onTap: () => widget.playerBloc.add(PlayerPlay(song, songs)),
+                    onTap: () =>
+                        widget.playerBloc!.add(PlayerPlay(song, songs)),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 10),
@@ -403,9 +399,7 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                               Container(
                                 width: 60,
                                 height: 60,
-                                child: AlbumArtworkImage(song.id,
-                                    song.albumArtwork, ResourceType.SONG,
-                                    audioQuery: audioQuery),
+                                child: QueryArtworkWidget(id: song.id, type: ArtworkType.ALBUM, artwork: song.artwork, deviceSDK: widget.playerBloc!.deviceModel!.sdk),
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(left: 8.0),
@@ -414,7 +408,7 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      song.title,
+                                      song.title!,
                                       overflow: TextOverflow.clip,
                                       style: TextStyle(
                                           fontSize: 16,
@@ -422,7 +416,7 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                                           color: Colors.white),
                                     ),
                                     Text(
-                                      song.artist,
+                                      song.artist!,
                                       style:
                                           TextStyle(color: Color(0xFF4e606e)),
                                     ),
@@ -431,11 +425,8 @@ class _RecentlyPlayedSongsListState extends State<RecentlyPlayedSongsList> {
                               ),
                             ],
                           ),
-                          Text(
-                            song.duration == null
-                                ? Utility.parseToMinutesSeconds(0)
-                                : Utility.parseToMinutesSeconds(
-                                    int.tryParse(song.duration)),
+                          Text(Utility.parseToMinutesSeconds(
+                                    song.duration),
                             style: TextStyle(color: Color(0xFF4e606e)),
                           ),
                         ],

@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
 class Station extends Equatable {
-  final String id;
-  final String rid;
-  final String title;
-  final String genre;
-  final String ct;
-  final String logo;
+  final String? id;
+  final String? rid;
+  final String? title;
+  final String? genre;
+  final String? ct;
+  final String? logo;
 
   const Station({
     this.genre,
@@ -18,7 +18,7 @@ class Station extends Equatable {
   });
 
   @override
-  List<Object> get props => [id, rid, title, logo, ct, genre];
+  List<Object?> get props => [id, rid, title, logo, ct, genre];
 
   @override
   String toString() => 'Station { id: $id, name: $title }';

@@ -12,7 +12,7 @@ class OnlineRadio {
   static final urlRegx = RegExp(
       r"http[s]?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
 
-  Future<XmlDocument> getTop500() async {
+  Future<XmlDocument?> getTop500() async {
     http.Response r = await fetchTop500();
 
     if (r.statusCode != 200) {
@@ -23,29 +23,33 @@ class OnlineRadio {
   }
 
   Future<http.Response> fetchTop500() {
-    return http.get(top500url);
+    return http.get(Uri.dataFromString(top500url));
   }
 
-  static Future<http.Response> fetchStreamUrl(String id) {
+  static Future<http.Response> fetchStreamUrl(String? id) {
     print(id);
-    return http.post("https://directory.shoutcast.com/Player/GetStreamUrl",
+    return http.post(
+        Uri.dataFromString(
+            "https://directory.shoutcast.com/Player/GetStreamUrl"),
         body: {'station': id});
   }
 
   static Future<http.Response> fetchCurrentTrak(String id) {
     print(id);
-    return http.post("https://directory.shoutcast.com/Player/GetCurrentTrack",
+    return http.post(
+        Uri.dataFromString(
+            "https://directory.shoutcast.com/Player/GetCurrentTrack"),
         body: {'stationID': id});
   }
 
-  static Future<String> getStreamPath(String id) async {
+  static Future<String> getStreamPath(String? id) async {
     print(id);
     http.Response r = await fetchStreamUrl(id);
     print(r.body);
     return r.body.replaceAll('"', "");
   }
 
-  static Future<String> getCurantTrak(String id) async {
+  static Future<String?> getCurantTrak(String id) async {
     print(id);
     http.Response r = await fetchCurrentTrak(id);
     print(r.body);

@@ -39,7 +39,7 @@ class Seeker {
   final AudioPlayer player;
   final Duration positionInterval;
   final Duration stepInterval;
-  final MediaItem mediaItem;
+  final MediaItem? mediaItem;
   bool _running = false;
 
   Seeker(
@@ -54,7 +54,7 @@ class Seeker {
     while (_running) {
       Duration newPosition = player.position + positionInterval;
       if (newPosition < Duration.zero) newPosition = Duration.zero;
-      if (newPosition > mediaItem.duration) newPosition = mediaItem.duration;
+      if (newPosition > mediaItem!.duration!) newPosition = mediaItem!.duration!;
       player.seek(newPosition);
       await Future.delayed(stepInterval);
     }

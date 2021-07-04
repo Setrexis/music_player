@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class ArtistTab extends StatefulWidget {
-  final double bottomPadding;
-  final Future data;
-  final Function resetSearch;
-  final bool searching;
+  final double? bottomPadding;
+  final Future? data;
+  final Function? resetSearch;
+  final bool? searching;
 
   const ArtistTab(
-      {Key key,
+      {Key? key,
       this.bottomPadding,
       this.data,
       this.resetSearch,
@@ -25,20 +27,28 @@ class ArtistTab extends StatefulWidget {
 }
 
 class _ArtistTabState extends State<ArtistTab> {
-  final FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  late PlayerBloc _playerBloc;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+        _playerBloc = BlocProvider.of<PlayerBloc>(context);
+
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: FutureBuilder<List<ArtistInfo>>(
-          future: widget.data,
+      child: FutureBuilder<List<ArtistModel>>(
+          future: widget.data?.then((value) => value as List<ArtistModel>),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Center(child: CircularProgressIndicator());
             }
 
-            if (snapshot.data.isEmpty) {
-              if (widget.searching)
+            if (snapshot.data!.isEmpty) {
+              if (widget.searching!)
                 return NoDataWidget(
                     title: "Not the artist you've been looking for?",
                     subtitle:
@@ -55,7 +65,7 @@ class _ArtistTabState extends State<ArtistTab> {
                 );
             }
 
-            List<ArtistInfo> artists = snapshot.data;
+            List<ArtistModel> artists = snapshot.data!;
 
             return MediaQuery.removePadding(
               context: context,
@@ -63,9 +73,9 @@ class _ArtistTabState extends State<ArtistTab> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ListView.builder(
-                  padding: EdgeInsets.only(bottom: widget.bottomPadding),
+                  padding: EdgeInsets.only(bottom: widget.bottomPadding!),
                   itemBuilder: (context, index) {
-                    ArtistInfo artist = artists[index];
+                    ArtistModel artist = artists[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Container(
@@ -81,9 +91,8 @@ class _ArtistTabState extends State<ArtistTab> {
                           onTap: () {
                             Navigator.of(context).push(new MaterialPageRoute(
                                 builder: (context) => DetailPage(
-                                      title: artist.name,
+                                      title: artist.artistName,
                                       child: ArtistInfoDeteils(
-                                        audioQuery: audioQuery,
                                         info: artist,
                                       ),
                                     )));
@@ -100,11 +109,7 @@ class _ArtistTabState extends State<ArtistTab> {
                                     Container(
                                       width: 60,
                                       height: 60,
-                                      child: AlbumArtworkImage(
-                                          artist.id,
-                                          artist.artistArtPath,
-                                          ResourceType.ARTIST,
-                                          audioQuery: audioQuery),
+                                      child: QueryArtworkWidget(id: artist.id, type: ArtworkType.ALBUM, artwork: artist.artwork, deviceSDK: _playerBloc.deviceModel!.sdk)
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.only(left: 8.0),
@@ -115,7 +120,7 @@ class _ArtistTabState extends State<ArtistTab> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            artist.name,
+                                            artist.artistName,
                                             overflow: TextOverflow.clip,
                                             style: TextStyle(
                                                 fontSize: 16,
@@ -125,7 +130,7 @@ class _ArtistTabState extends State<ArtistTab> {
                                           Text(
                                             artist.numberOfAlbums +
                                                 " | " +
-                                                artist.numberOfTracks,
+                                                artist.numberOfTracks!,
                                             style: TextStyle(
                                                 color: Color(0xFF4e606e)),
                                           ),
@@ -151,11 +156,9 @@ class _ArtistTabState extends State<ArtistTab> {
 }
 
 class ArtistInfoDeteils extends StatelessWidget {
-  final FlutterAudioQuery audioQuery;
-  final ArtistInfo info;
+  final ArtistModel? info;
 
-  const ArtistInfoDeteils({Key key, this.audioQuery, this.info})
-      : super(key: key);
+  const ArtistInfoDeteils({Key? key, this.info}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -164,15 +167,14 @@ class ArtistInfoDeteils extends StatelessWidget {
         Expanded(
           child: AlbumTab(
             removePaddingTop: false,
-            albumListFuture:
-                audioQuery.getAlbumsFromArtist(artist: info.name ?? "Afrojack"),
+            albumListFuture: OnAudioQuery().queryAlbums(),
           ),
         ),
         Expanded(
           child: SongTab(
             removePaddingTop: false,
-            audioQuery: audioQuery,
-            songListFuture: audioQuery.getSongsFromArtist(artistId: info.id),
+            songListFuture:
+                OnAudioQuery().querySongsBy(SongsByType.ID, [info!.id]),
           ),
         )
       ],

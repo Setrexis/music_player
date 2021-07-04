@@ -12,7 +12,7 @@ class StationFetched extends StationEvent {}
 class StationSearch extends StationEvent {
   final String search;
 
-  const StationSearch({@required this.search}) : assert(search != null);
+  const StationSearch({required this.search}) : assert(search != null);
 
   @override
   List<Object> get props => [search];

@@ -9,27 +9,31 @@ import 'package:music_player/src/MediaLib.dart';
 import 'package:music_player/src/Utility.dart';
 
 class AudioPlayerTask extends BackgroundAudioTask {
+  late ConcatenatingAudioSource audioSource;
+  final _mediaLibrary = MediaLibrary();
   AudioPlayer _player = new AudioPlayer();
-  AudioProcessingState _skipState;
-  Seeker _seeker;
-  StreamSubscription<PlaybackEvent> _eventSubscription;
-  MediaLibrary mediaLibrary;
-  List<MediaItem> get queue => mediaLibrary.items;
-  int get index => _player.currentIndex;
-  MediaItem get mediaItem => index == null ? null : queue[index];
-  ConcatenatingAudioSource audioSource;
+  AudioProcessingState? _skipState;
+  Seeker? _seeker;
+  late StreamSubscription<PlaybackEvent> _eventSubscription;
+
+  List<MediaItem> get queue => _mediaLibrary.items;
+  int? get index => _player.currentIndex;
+  MediaItem? get mediaItem => index == null ? null : queue[index!];
 
   @override
-  Future<void> onStart(Map<String, dynamic> params) async {
+  Future<void> onStart(Map<String, dynamic>? params) async {
+    // Broadcast media item changes.
+    _player.currentIndexStream.listen((index) {
+      if (index != null) AudioServiceBackground.setMediaItem(queue[index]);
+    });
     try {
-      var x = new Map<String, List<dynamic>>.from(params.values.first);
-      List<MediaItem> items = List();
+      var x = new Map<String, List<dynamic>>.from(params!.values.first);
+      _mediaLibrary.clear();
       for (var i in x.values.toList()) {
         for (var j in i) {
-          items.add(MediaItem.fromJson(jsonDecode(j)));
+          queue.add(MediaItem.fromJson(jsonDecode(j)));
         }
       }
-      mediaLibrary = MediaLibrary(items);
     } catch (e) {
       print(e);
     }
@@ -70,7 +74,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
         children:
             queue.map((item) => AudioSource.uri(Uri.parse(item.id))).toList());
     try {
-      await _player.load(audioSource);
+      await _player.setAudioSource(audioSource);
       // In this example, we automatically start playing on start.
       onPlay();
     } catch (e) {
@@ -91,7 +95,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     // previous. This variable holds the preferred state to send instead of
     // buffering during a skip, and it is cleared as soon as the player exits
     // buffering (see the listener in onStart).
-    _skipState = newIndex > index
+    _skipState = newIndex > index!
         ? AudioProcessingState.skippingToNext
         : AudioProcessingState.skippingToPrevious;
     // This jumps to the beginning of the queue item at newIndex.
@@ -132,7 +136,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     await super.onStop();
   }
 
-  @override
+  /*@override
   Future<void> onUpdateQueue(List<MediaItem> newqueue) async {
     audioSource = ConcatenatingAudioSource(
       children:
@@ -146,7 +150,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
       print("Error: $e");
       onStop();
     }
-  }
+  }*/
 
   @override
   Future<void> onAddQueueItems(List<MediaItem> items) async {
@@ -171,8 +175,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
   @override
   Future<void> onUpdateMediaItem(MediaItem item) async {
-    mediaLibrary.items.removeAt(0);
-    mediaLibrary.items.insert(0, item);
+    _mediaLibrary.items.removeAt(0);
+    _mediaLibrary.items.insert(0, item);
     await AudioServiceBackground.setQueue(queue);
   }
 
@@ -181,7 +185,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     var newPosition = _player.position + offset;
     // Make sure we don't jump out of bounds.
     if (newPosition < Duration.zero) newPosition = Duration.zero;
-    if (newPosition > mediaItem.duration) newPosition = mediaItem.duration;
+    if (newPosition > mediaItem!.duration!) newPosition = mediaItem!.duration!;
     // Perform the jump via a seek.
     await _player.seek(newPosition);
   }
@@ -220,19 +224,19 @@ class AudioPlayerTask extends BackgroundAudioTask {
     );
   }
 
-  @override
+  /*@override
   Future<void> onTaskRemoved() {
     if (!AudioServiceBackground.state.playing) {
       onStop();
     }
-  }
+  }*/
 
   /// Maps just_audio's processing state into into audio_service's playing
   /// state. If we are in the middle of a skip, we use [_skipState] instead.
-  AudioProcessingState _getProcessingState() {
+  AudioProcessingState? _getProcessingState() {
     if (_skipState != null) return _skipState;
     switch (_player.processingState) {
-      case ProcessingState.none:
+      case ProcessingState.idle:
         return AudioProcessingState.stopped;
       case ProcessingState.loading:
         return AudioProcessingState.connecting;

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class AlbumTab extends StatefulWidget {
-  final Future albumListFuture;
+  final Future? albumListFuture;
   final bool removePaddingTop;
-  final double bottomPadding;
-  final Function resetSearch;
-  final bool searching;
+  final double? bottomPadding;
+  final Function? resetSearch;
+  final bool? searching;
 
   const AlbumTab(
-      {Key key,
+      {Key? key,
       this.albumListFuture,
       this.removePaddingTop = true,
       this.bottomPadding,
@@ -26,12 +28,20 @@ class AlbumTab extends StatefulWidget {
 }
 
 class _AlbumTabState extends State<AlbumTab> {
-  final FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  late PlayerBloc _playerBloc;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _playerBloc = BlocProvider.of<PlayerBloc>(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<AlbumInfo>>(
-        future: widget.albumListFuture,
+    return FutureBuilder<List<AlbumModel>>(
+        future:
+            widget.albumListFuture?.then((value) => value as List<AlbumModel>),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
@@ -39,8 +49,8 @@ class _AlbumTabState extends State<AlbumTab> {
             );
           }
 
-          if (snapshot.data.isEmpty) {
-            if (widget.searching)
+          if (snapshot.data!.isEmpty) {
+            if (widget.searching!)
               return NoDataWidget(
                   title: "Not the album you've been looking for?",
                   subtitle: "We could not find a album matching your search.",
@@ -62,24 +72,21 @@ class _AlbumTabState extends State<AlbumTab> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: GridView.builder(
-                padding: EdgeInsets.only(bottom: widget.bottomPadding),
-                itemCount: snapshot.data.length,
+                padding: EdgeInsets.only(bottom: widget.bottomPadding!),
+                itemCount: snapshot.data!.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 60,
                     crossAxisSpacing: 20),
                 itemBuilder: (context, index) {
-                  AlbumInfo album = snapshot.data[index];
+                  AlbumModel album = snapshot.data![index];
                   return Container(
                     child: InkWell(
                       onTap: () {
                         Navigator.of(context).push(new MaterialPageRoute(
                           builder: (context) => DetailPage(
-                            title: album.title,
+                            title: album.albumName,
                             child: SongTab(
-                              audioQuery: audioQuery,
-                              songListFuture: audioQuery.getSongsFromAlbum(
-                                  albumId: album.id),
                               removePaddingTop: false,
                             ),
                           ),
@@ -92,14 +99,15 @@ class _AlbumTabState extends State<AlbumTab> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
-                            child: AlbumArtworkImage(
-                                album.id, album.albumArt, ResourceType.ALBUM,
-                                audioQuery: audioQuery),
-                          ),
+                              child: QueryArtworkWidget(
+                                  id: album.id,
+                                  type: ArtworkType.ALBUM,
+                                  artwork: album.artwork,
+                                  deviceSDK: _playerBloc.deviceModel!.sdk)),
                           Column(
                             children: [
                               Text(
-                                album.title,
+                                album.albumName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -109,7 +117,7 @@ class _AlbumTabState extends State<AlbumTab> {
                               Text(
                                 album.artist +
                                     " | " +
-                                    album.numberOfSongs +
+                                    album.numOfSongs +
                                     " Songs",
                                 style: TextStyle(
                                   color: Colors.white,

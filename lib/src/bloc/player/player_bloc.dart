@@ -1,5 +1,5 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/AudioPlayer.dart';
 import 'package:music_player/src/MediaLib.dart';
@@ -18,38 +18,41 @@ void _audioPlayerTaskEntrypoint() async {
 }
 
 class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
+  DeviceModel? deviceModel;
+
   PlayerBloc()
       : super(AudioService.currentMediaItem == null
             ? PlayerEmpty()
             : PlayerPlaying(null, null,
-                AudioService.currentMediaItem.genre.contains("r"))) {
+                AudioService.currentMediaItem!.genre!.contains("r"))) {
     AudioService.playbackStateStream.listen((PlaybackState state) async {
       print(state.processingState.toString());
       if (state == null) this.add(PlayerStop());
       if (state.processingState == AudioProcessingState.ready) {
-        MediaItem cur = AudioService.currentMediaItem;
+        MediaItem? cur = AudioService.currentMediaItem;
         print("Test sdfjsojf----------------------------------------------");
         if (cur != null) {
-          if (cur.genre.contains("r"))
+          if (cur.genre!.contains("r"))
             return; // Only musik in recently played no radio.
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          var recetplayed = prefs.getStringList("recentlyplayed");
+          List<String?>? recetplayed = prefs.getStringList("recentlyplayed");
           if (recetplayed != null) {
             recetplayed.remove(cur.genre);
             recetplayed.insert(0, cur.genre);
             if (recetplayed.length > 100) recetplayed.removeLast();
-            prefs.setStringList("recentlyplayed", recetplayed);
+            prefs.setStringList("recentlyplayed", recetplayed as List<String>);
           } else {
-            prefs.setStringList("recentlyplayed", [cur.genre]);
+            prefs.setStringList("recentlyplayed", [cur.genre!]);
           }
         }
       }
     });
+    OnAudioQuery().queryDeviceInfo().then((value) => deviceModel = value);
   }
 
   @override
   Stream<PlayerState> mapEventToState(PlayerEvent event) async* {
-    final currentState = state;
+    final PlayerState currentState = state;
 
     if (event is PlayerPlayRadio) {
       try {
@@ -81,7 +84,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           yield PlayerInitial(songInfo.items.first, false);
           await _audioManager(songInfo);
           yield PlayerPlaying(null, songInfo.items.first, false);
-          final playlist = _loadPlaylist(songInfo.items.first, event.playlist);
+          final playlist = _loadPlaylist(songInfo.items.first, event.playlist!);
           await _addPlaylistToQueue(playlist.items);
           yield PlayerPlaying(playlist.items, songInfo.items.first, false);
           return;
@@ -90,7 +93,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           final songInfo = _loadMediaItem(event.songInfo);
           yield PlayerInitial(songInfo.items.first, false);
           await AudioService.updateQueue(songInfo.items);
-          final playlist = _loadPlaylist(songInfo.items.first, event.playlist);
+          final playlist = _loadPlaylist(songInfo.items.first, event.playlist!);
           await _addPlaylistToQueue(playlist.items);
           yield PlayerPlaying(playlist.items, songInfo.items.first, false);
           return;
@@ -124,59 +127,59 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         androidEnableQueue: true,
       );
 
-  static MediaLibrary _loadPlaylist(MediaItem first, List<SongInfo> songList) {
-    List<MediaItem> playlist = List();
+  static MediaLibrary _loadPlaylist(MediaItem first, List<SongModel> songList) {
+    List<MediaItem> playlist = [];
 
-    for (SongInfo song in songList) {
+    for (SongModel song in songList) {
       //print(song);
       playlist.add(MediaItem(
-          id: "file://${song.filePath}",
+          id: song.id.toString(),
           album: song.album,
           title: song.title,
           artist: song.artist,
-          genre: song.id,
-          artUri: song.albumArtwork ?? song.albumId,
-          duration: Duration(milliseconds: int.parse(song.duration ?? "0"))));
+          genre: song.composer,
+          artUri: Uri.dataFromString(song.artwork != null ? song.artwork! : ""),
+          duration: Duration(milliseconds: song.duration)));
     }
 
     int i = playlist.indexOf(first);
 
     if (i == 0) {
       playlist.removeAt(0);
-      return MediaLibrary(playlist);
+      return MediaLibrary.from(playlist);
     }
     List<MediaItem> l1 = playlist.sublist(0, i - 1);
     List<MediaItem> l2 = playlist.sublist(i + 1, playlist.length);
 
     l2.addAll(l1);
-    return MediaLibrary(l2);
+    return MediaLibrary.from(l2);
   }
 
-  static MediaLibrary _loadMediaItem(SongInfo first) {
-    List<MediaItem> playlist = List();
+  static MediaLibrary _loadMediaItem(SongModel first) {
+    List<MediaItem> playlist = [];
     playlist.add(MediaItem(
-        id: "file://${first.filePath}",
+        id: first.uri,
         album: first.album,
         title: first.title,
         artist: first.artist,
-        genre: first.id,
-        artUri: first.albumArtwork ?? first.albumId,
-        duration: Duration(milliseconds: int.parse(first.duration ?? "0"))));
-    return MediaLibrary(playlist);
+        genre: first.id.toString(),
+        artUri: Uri.dataFromString(first.artwork != null ? first.artwork! : ""),
+        duration: Duration(milliseconds: first.duration)));
+    return MediaLibrary.from(playlist);
   }
 
   static Future<MediaLibrary> _loadStations(
       List<Station> streams, Station stream) async {
-    List<MediaItem> playlist = List();
+    List<MediaItem> playlist = [];
 
     for (Station song in streams) {
       playlist.add(MediaItem(
           id: await OnlineRadio.getStreamPath(song.id),
           album: song.id ?? "",
-          title: song.title,
+          title: song.title!,
           artist: song.ct ?? "",
           genre: song.rid,
-          artUri: song.logo ?? "",
+          artUri: Uri.dataFromString(song.logo ?? ""),
           duration: Duration(milliseconds: 0)));
     }
 
@@ -186,20 +189,20 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       playlist.removeAt(i);
     }
 
-    return MediaLibrary(playlist);
+    return MediaLibrary.from(playlist);
   }
 
   static Future<MediaLibrary> _loadStation(Station stream) async {
-    List<MediaItem> playlist = List();
+    List<MediaItem> playlist = [];
 
     playlist.add(MediaItem(
         id: await OnlineRadio.getStreamPath(stream.id),
         album: stream.id ?? "",
-        title: stream.title,
+        title: stream.title!,
         artist: stream.ct ?? "",
         genre: stream.rid,
-        artUri: stream.logo ?? "",
+        artUri: Uri.dataFromString(stream.logo ?? ""),
         duration: Duration(milliseconds: 0)));
-    return MediaLibrary(playlist);
+    return MediaLibrary.from(playlist);
   }
 }

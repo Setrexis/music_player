@@ -5,7 +5,6 @@ import 'dart:ui';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/radio/station_bloc.dart';
 import 'package:music_player/src/bloc/radio/station_event.dart';
@@ -16,6 +15,7 @@ import 'package:music_player/src/ui/homeTab.dart';
 import 'package:music_player/src/ui/onlineRadioTab.dart';
 import 'package:music_player/src/ui/songsTab.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -23,11 +23,10 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
-  FlutterAudioQuery audioQuery = FlutterAudioQuery();
   TextEditingController _searchQueryController = TextEditingController();
   bool _isSearching = false;
   String searchQuery = "";
-  StationBloc _stationBolc;
+  StationBloc? _stationBolc;
 
   @override
   Widget build(BuildContext context) {
@@ -148,17 +147,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 ArtistTab(
                                   bottomPadding: paddingBottom,
                                   data: _isSearching
-                                      ? audioQuery.searchArtists(
-                                          query: searchQuery)
-                                      : audioQuery.getArtists(),
+                                      ? OnAudioQuery().queryArtists()
+                                      //query: searchQuery)
+                                      : OnAudioQuery().queryArtists(),
                                   resetSearch: resetSearchQuery,
                                   searching: _isSearching,
                                 ),
                                 AlbumTab(
                                   albumListFuture: _isSearching
-                                      ? audioQuery.searchAlbums(
-                                          query: searchQuery)
-                                      : audioQuery.getAlbums(),
+                                      ? OnAudioQuery().queryAlbums()
+                                      //query: searchQuery)
+                                      : OnAudioQuery().queryAlbums(),
                                   bottomPadding: paddingBottom,
                                   resetSearch: resetSearchQuery,
                                   searching: _isSearching,
@@ -166,18 +165,19 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 GenreTab(
                                   bottomPadding: paddingBottom,
                                   genreData: _isSearching
-                                      ? audioQuery.searchGenres(
-                                          query: searchQuery)
-                                      : audioQuery.getGenres(),
+                                      ? OnAudioQuery().queryGenres()
+                                      //query: searchQuery)
+                                      : OnAudioQuery().queryGenres(),
                                   resetSearch: resetSearchQuery,
                                   searching: _isSearching,
                                 ),
                                 SongTab(
-                                  audioQuery: audioQuery,
                                   songListFuture: _isSearching
-                                      ? audioQuery.searchSongs(
-                                          query: searchQuery)
-                                      : audioQuery.getSongs(),
+                                      ? OnAudioQuery().queryWithFilters(
+                                          searchQuery,
+                                          WithFiltersType.AUDIOS,
+                                          "")
+                                      : OnAudioQuery().querySongs(),
                                   bottomPadding: paddingBottom,
                                   searching: _isSearching,
                                   resetSearch: resetSearchQuery,
@@ -194,7 +194,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     ),
                   )),
             ),
-            BottomPlayerBar(audioQuery: audioQuery)
+            BottomPlayerBar()
           ]);
         });
   }
@@ -217,7 +217,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     setState(() {
       searchQuery = newQuery;
     });
-    _stationBolc.add(StationSearch(search: newQuery));
+    _stationBolc!.add(StationSearch(search: newQuery));
   }
 
   void resetSearchQuery() {
@@ -226,27 +226,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 }
 
 class SongListWidget extends StatelessWidget {
-  final List<SongInfo> songList;
-  final FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  final List<SongModel> songList;
+  final int deviceSDK;
 
-  SongListWidget({Key key, this.songList}) : super(key: key);
+  SongListWidget(
+      {required Key key, required this.songList, required this.deviceSDK})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: songList.length,
       itemBuilder: (context, index) => ListTile(
-        leading: (songList[index].albumArtwork == null)
-            ? FutureBuilder<Uint8List>(
-                future: audioQuery.getArtwork(
-                    type: ResourceType.SONG, id: songList[index].id),
+        leading: (songList[index].artwork == null)
+            ? FutureBuilder<Uint8List?>(
+                future: OnAudioQuery()
+                    .queryArtworks(songList[index].id, ArtworkType.ALBUM),
                 builder: (_, snapshot) {
                   if (snapshot.data == null || !snapshot.hasData)
                     return Center(
                       child: CircularProgressIndicator(),
                     );
 
-                  if (snapshot.data.isEmpty) {
+                  if (snapshot.data!.isEmpty) {
                     return Icon(Icons.music_note);
                   }
 
@@ -254,11 +256,11 @@ class SongListWidget extends StatelessWidget {
                     height: 80,
                     width: 80,
                     child: Image.memory(
-                      snapshot.data,
+                      snapshot.data!,
                     ),
                   );
                 })
-            : Image.file(File(songList[index].albumArtwork)),
+            : Image.file(File(songList[index].artwork!)),
         title: Text(songList[index].title),
         subtitle: Text(songList[index].artist),
       ),
@@ -269,11 +271,13 @@ class SongListWidget extends StatelessWidget {
 class CircleTabIndicator extends Decoration {
   final BoxPainter _painter;
 
-  CircleTabIndicator({@required Color color, @required double radius})
+  CircleTabIndicator({required Color color, required double radius})
       : _painter = _CirclePainter(color, radius);
 
+  void nothing() {}
+
   @override
-  BoxPainter createBoxPainter([onChanged]) => _painter;
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) => _painter;
 }
 
 class _CirclePainter extends BoxPainter {
@@ -288,7 +292,7 @@ class _CirclePainter extends BoxPainter {
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration cfg) {
     final Offset circleOffset =
-        offset + Offset(cfg.size.width / 2, cfg.size.height - radius - 5);
+        offset + Offset(cfg.size!.width / 2, cfg.size!.height - radius - 5);
     canvas.drawCircle(circleOffset, radius, _paint);
   }
 }

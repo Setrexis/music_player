@@ -6,7 +6,7 @@ abstract class StationState extends Equatable {
   const StationState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class StationInitial extends StationState {}
@@ -14,8 +14,8 @@ class StationInitial extends StationState {}
 class StationFailure extends StationState {}
 
 class StationSuccess extends StationState {
-  final List<Station> station;
-  final bool hasReachedMax;
+  final List<Station>? station;
+  final bool? hasReachedMax;
 
   const StationSuccess({
     this.station,
@@ -23,8 +23,8 @@ class StationSuccess extends StationState {
   });
 
   StationSuccess copyWith({
-    List<Station> station,
-    bool hasReachedMax,
+    List<Station>? station,
+    bool? hasReachedMax,
   }) {
     return StationSuccess(
       station: station ?? this.station,
@@ -33,9 +33,9 @@ class StationSuccess extends StationState {
   }
 
   @override
-  List<Object> get props => [station, hasReachedMax];
+  List<Object?> get props => [station, hasReachedMax];
 
   @override
   String toString() =>
-      'stationuccess { station: ${station.length}, hasReachedMax: $hasReachedMax }';
+      'stationuccess { station: ${station!.length}, hasReachedMax: $hasReachedMax }';
 }

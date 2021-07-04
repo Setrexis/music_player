@@ -11,7 +11,7 @@ import 'dart:async';
 class StationBloc extends Bloc<StationEvent, StationState> {
   final http.Client httpClient;
 
-  StationBloc({@required this.httpClient}) : super(StationInitial());
+  StationBloc({required this.httpClient}) : super(StationInitial());
 
   @override
   Stream<Transition<StationEvent, StationState>> transformEvents(
@@ -26,7 +26,7 @@ class StationBloc extends Bloc<StationEvent, StationState> {
 
   @override
   Stream<StationState> mapEventToState(StationEvent event) async* {
-    final currentState = state;
+    final StationState currentState = state;
     if (event is StationFetched && !_hasReachedMax(currentState)) {
       try {
         if (currentState is StationInitial) {
@@ -36,11 +36,11 @@ class StationBloc extends Bloc<StationEvent, StationState> {
         }
         if (currentState is StationSuccess) {
           final station =
-              await _fetchPosts(currentState.station.length, 20, null);
+              await _fetchPosts(currentState.station!.length, 20, null);
           yield station.isEmpty
               ? currentState.copyWith(hasReachedMax: true)
               : StationSuccess(
-                  station: currentState.station + station,
+                  station: currentState.station! + station,
                   hasReachedMax: false,
                 );
         }
@@ -56,11 +56,11 @@ class StationBloc extends Bloc<StationEvent, StationState> {
         }
         if (currentState is StationSuccess) {
           final station =
-              await _fetchPosts(currentState.station.length, 20, event.search);
+              await _fetchPosts(currentState.station!.length, 20, event.search);
           yield station.isEmpty
               ? currentState.copyWith(hasReachedMax: true)
               : StationSuccess(
-                  station: currentState.station + station,
+                  station: currentState.station! + station,
                   hasReachedMax: false,
                 );
         }
@@ -71,20 +71,20 @@ class StationBloc extends Bloc<StationEvent, StationState> {
   }
 
   bool _hasReachedMax(StationState state) =>
-      state is StationSuccess && state.hasReachedMax;
+      state is StationSuccess && state.hasReachedMax!;
 
   Future<List<Station>> _fetchPosts(
-      int startIndex, int limit, String search) async {
+      int startIndex, int limit, String? search) async {
     http.Response r;
 
     if (search != null) {
       print("search");
       search.replaceAll(" ", "+");
-      r = await httpClient.get(
-          'http://api.shoutcast.com/legacy/stationsearch?k=sh1t7hyn3Kh0jhlV&search=$search&limit=$startIndex,$limit');
+      r = await httpClient.get(Uri.dataFromString(
+          'http://api.shoutcast.com/legacy/stationsearch?k=sh1t7hyn3Kh0jhlV&search=$search&limit=$startIndex,$limit'));
     } else {
-      r = await httpClient
-          .get('https://api.shoutcast.com/legacy/Top500?k=sh1t7hyn3Kh0jhlV');
+      r = await httpClient.get(Uri.dataFromString(
+          'https://api.shoutcast.com/legacy/Top500?k=sh1t7hyn3Kh0jhlV'));
     }
 
     if (r.statusCode == 200) {
@@ -95,7 +95,7 @@ class StationBloc extends Bloc<StationEvent, StationState> {
       return data.map((rawPost) {
         return Station(
             id: rawPost.getAttribute('id'),
-            rid: "r" + rawPost.getAttribute('id'),
+            rid: "r" + rawPost.getAttribute('id')!,
             title: rawPost.getAttribute('name'),
             genre: rawPost.getAttribute('genre'),
             ct: rawPost.getAttribute('genre'),

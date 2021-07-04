@@ -6,7 +6,7 @@ abstract class PlayerState extends Equatable {
   const PlayerState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class PlayerInitial extends PlayerState {
@@ -24,14 +24,14 @@ class PlayerEmpty extends PlayerState {}
 class PlayerFailure extends PlayerState {}
 
 class PlayerPlaying extends PlayerState {
-  final List<MediaItem> currentMediaItemPlaylist;
-  final MediaItem curruentMediaItem;
+  final List<MediaItem>? currentMediaItemPlaylist;
+  final MediaItem? curruentMediaItem;
   final bool radio;
 
   const PlayerPlaying(
       this.currentMediaItemPlaylist, this.curruentMediaItem, this.radio);
 
   @override
-  List<Object> get props =>
+  List<Object?> get props =>
       [curruentMediaItem, currentMediaItemPlaylist, radio];
 }

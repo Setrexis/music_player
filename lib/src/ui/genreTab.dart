@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/deteilsPage.dart';
 import 'package:music_player/src/ui/widget/AlbumImageWidget.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class GenreTab extends StatefulWidget {
-  final double bottomPadding;
-  final Future genreData;
-  final Function resetSearch;
-  final bool searching;
+  final double? bottomPadding;
+  final Future<List<GenreModel>>? genreData;
+  final Function? resetSearch;
+  final bool? searching;
 
   const GenreTab(
-      {Key key,
+      {Key? key,
       this.bottomPadding,
       this.genreData,
       this.resetSearch,
@@ -24,12 +24,10 @@ class GenreTab extends StatefulWidget {
 }
 
 class _GenreTabState extends State<GenreTab> {
-  final FlutterAudioQuery audioQuery = FlutterAudioQuery();
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: FutureBuilder(
+      child: FutureBuilder<List<GenreModel>>(
         future: widget.genreData,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -38,8 +36,8 @@ class _GenreTabState extends State<GenreTab> {
             );
           }
 
-          if (snapshot.data.isEmpty) {
-            if (widget.searching)
+          if (snapshot.data!.isEmpty) {
+            if (widget.searching!)
               return NoDataWidget(
                   title: "Not the Genre you've been looking for?",
                   subtitle: "We could not find a genre matching your search.",
@@ -64,12 +62,11 @@ class _GenreTabState extends State<GenreTab> {
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                 ),
-                padding: EdgeInsets.only(bottom: widget.bottomPadding),
-                itemCount: snapshot.data.length,
+                padding: EdgeInsets.only(bottom: widget.bottomPadding!),
+                itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
-                  GenreInfo genre = snapshot.data[index];
+                  GenreModel? genre = snapshot.data![index];
                   return GenreItem(
-                    audioQuery: audioQuery,
                     genre: genre,
                   );
                 },
@@ -83,29 +80,19 @@ class _GenreTabState extends State<GenreTab> {
 }
 
 class GenreItem extends StatefulWidget {
-  final GenreInfo genre;
-  final FlutterAudioQuery audioQuery;
+  final GenreModel? genre;
 
-  const GenreItem({Key key, this.genre, this.audioQuery}) : super(key: key);
+  const GenreItem({Key? key, this.genre}) : super(key: key);
 
   @override
   _GenreItemState createState() => _GenreItemState();
 }
 
 class _GenreItemState extends State<GenreItem> {
-  String albumid = "0";
-  Future albumListFuture;
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    albumListFuture =
-        widget.audioQuery.getAlbumsFromGenre(genre: widget.genre.name);
-    albumListFuture.then((value) => setState(() {
-          albumid = value[0].id;
-        }));
   }
 
   @override
@@ -116,16 +103,15 @@ class _GenreItemState extends State<GenreItem> {
         onTap: () => Navigator.of(context).push(new MaterialPageRoute(
           builder: (context) => DetailPage(
             child: AlbumTab(
-              albumListFuture: albumListFuture,
+              albumListFuture: OnAudioQuery().queryAlbums(),
             ),
-            title: widget.genre.name,
+            title: widget.genre!.genreName,
           ),
         )),
         child: AlbumArtBackground(
-          audioQuery: widget.audioQuery,
-          child: Text(widget.genre.name),
-          type: ResourceType.ALBUM,
-          id: albumid,
+          child: Text(widget.genre!.genreName),
+          id: widget.genre!.id.toString(),
+          artwork: widget.genre!.artwork,
         ),
       ),
     );

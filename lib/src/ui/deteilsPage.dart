@@ -1,13 +1,12 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:music_player/src/ui/widget/CommonWidgets.dart';
 
 class DetailPage extends StatefulWidget {
-  final Widget child;
-  final String title;
+  final Widget? child;
+  final String? title;
 
-  const DetailPage({Key key, this.child, this.title}) : super(key: key);
+  const DetailPage({Key? key, this.child, this.title}) : super(key: key);
 
   @override
   _DetailPageState createState() => _DetailPageState();
@@ -22,7 +21,7 @@ class _DetailPageState extends State<DetailPage> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0.0,
-          title: Text(widget.title),
+          title: Text(widget.title!),
           centerTitle: true,
           actions: [
             IconButton(
@@ -67,7 +66,7 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                   ),
                 ),
-                BottomPlayerBar(audioQuery: FlutterAudioQuery())
+                BottomPlayerBar()
               ]);
             }));
   }

@@ -1,49 +1,167 @@
+import 'dart:ffi';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/AudioPlayer.dart';
-import 'package:music_player/src/MediaLib.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/bloc/player/player_state.dart';
 import 'package:bloc/bloc.dart';
+import 'package:rxdart/rxdart.dart';
 
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void _audioPlayerTaskEntrypoint() async {
-  AudioServiceBackground.run(() => AudioPlayerTask());
+enum Playback {
+  repeatSong,
+  shuffle,
+}
+
+class QueueState {
+  final List<MediaItem>? queue;
+  final MediaItem? mediaItem;
+
+  QueueState(this.queue, this.mediaItem);
+}
+
+class MediaState {
+  final MediaItem? mediaItem;
+  final Duration position;
+  final bool playing;
+
+  MediaState(this.mediaItem, this.position, this.playing);
 }
 
 class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   DeviceModel? deviceModel;
+  late AudioHandler _audioHandler;
+  late BehaviorSubject<List<SongModel>> _songs$;
+  late BehaviorSubject<List<AlbumModel>> _albums$;
+  late BehaviorSubject<List<PlaylistModel>> _playlists$;
+  late BehaviorSubject<List<ArtistModel>> _artists$;
+  late BehaviorSubject<List<SongModel>> _favorits$;
+  late BehaviorSubject<List<SongModel>> _songsSearch$;
+  late BehaviorSubject<List<AlbumModel>> _albumsSearch$;
+  late BehaviorSubject<List<PlaylistModel>> _playlistsSearch$;
+  late BehaviorSubject<List<ArtistModel>> _artistsSearch$;
+  late BehaviorSubject<List<SongModel>> _playlist$;
 
-  PlayerBloc()
-      : super(AudioService.currentMediaItem == null
-            ? PlayerEmpty()
-            : PlayerPlaying(null, null,
-                AudioService.currentMediaItem!.genre!.contains("r"))) {
-    AudioService.playbackStateStream.listen((PlaybackState state) async {
-      print(state.processingState.toString());
-      if (state == null) this.add(PlayerStop());
-      if (state.processingState == AudioProcessingState.ready) {
-        MediaItem? cur = AudioService.currentMediaItem;
-        print("Test sdfjsojf----------------------------------------------");
-        if (cur != null) {
-          if (cur.genre!.contains("r"))
-            return; // Only musik in recently played no radio.
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          List<String?>? recetplayed = prefs.getStringList("recentlyplayed");
-          if (recetplayed != null) {
-            recetplayed.remove(cur.genre);
-            recetplayed.insert(0, cur.genre);
-            if (recetplayed.length > 100) recetplayed.removeLast();
-            prefs.setStringList("recentlyplayed", recetplayed as List<String>);
-          } else {
-            prefs.setStringList("recentlyplayed", [cur.genre!]);
-          }
-        }
+  BehaviorSubject<List<SongModel>> get songs$ => _songs$;
+  BehaviorSubject<List<SongModel>> get playlist$ => _playlist$;
+  BehaviorSubject<List<AlbumModel>> get albums$ => _albums$;
+  BehaviorSubject<List<ArtistModel>> get artists$ => _artists$;
+  BehaviorSubject<List<PlaylistModel>> get playlists$ => _playlists$;
+  BehaviorSubject<List<SongModel>> get songsSearch$ => _songsSearch$;
+  BehaviorSubject<List<AlbumModel>> get albumsSearch$ => _albumsSearch$;
+  BehaviorSubject<List<ArtistModel>> get artistsSearch$ => _artistsSearch$;
+  BehaviorSubject<List<PlaylistModel>> get playlistsSearch$ =>
+      _playlistsSearch$;
+  BehaviorSubject<List<SongModel>> get favorits$ => _favorits$;
+  AudioHandler get audioHandler => _audioHandler;
+
+  Future<void> fetchMusicInformation() async {
+    print(await OnAudioQuery().permissionsStatus());
+    OnAudioQuery().queryArtists().then((value) => _artists$.add(value));
+    OnAudioQuery().queryAlbums().then((value) => _albums$.add(value));
+    OnAudioQuery().queryPlaylists().then((value) => _playlists$.add(value));
+    OnAudioQuery().querySongs().then((value) async {
+      _songs$.add(value);
+      print(value.length);
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String>? songIDs = prefs.getStringList("favorits");
+      List<SongModel> favSongs = [];
+      if (songIDs != null) {
+        value.forEach((element) {
+          songIDs.forEach((element2) {
+            if (element.id.toString() == element2) {
+              favSongs.add(element);
+            }
+          });
+        });
       }
+      _favorits$.add(favSongs);
     });
+
+    favorits$.listen((value) async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setStringList(
+          "favorits", favorits$.value.map((e) => e.id.toString()).toList());
+    });
+  }
+
+  void search(String search) {
+    if (search == "") {
+      _songsSearch$.add([]);
+      _albumsSearch$.add([]);
+      _playlistsSearch$.add([]);
+      _artistsSearch$.add([]);
+    }
+    _searchArtists(search);
+    _searchPlaylists(search);
+    _searchAlbums(search);
+    _searchSongs(search);
+  }
+
+  void _searchSongs(String search) async {
+    _songsSearch$.add(_songs$.value
+        .where((element) => element.title.contains(search))
+        .toList());
+  }
+
+  void _searchAlbums(String search) async {
+    _albumsSearch$.add(_albums$.value
+        .where((element) => element.albumName.contains(search))
+        .toList());
+  }
+
+  void _searchArtists(String search) async {
+    _artistsSearch$.add(_artists$.value
+        .where((element) => element.artistName.contains(search))
+        .toList());
+  }
+
+  void _searchPlaylists(String search) async {
+    _playlistsSearch$.add(_playlists$.value
+        .where((element) => element.playlistName.contains(search))
+        .toList());
+  }
+
+  /// A stream reporting the combined state of the current media item and its
+  /// current position.
+  Stream<MediaState> get mediaStateStream =>
+      Rx.combineLatest3<MediaItem?, Duration, bool, MediaState>(
+          _audioHandler.mediaItem,
+          AudioService.position,
+          playingStream,
+          (mediaItem, position, playing) =>
+              MediaState(mediaItem, position, playing));
+
+  /// A stream reporting the combined state of the current queue and the current
+  /// media item within that queue.
+  Stream<QueueState> get queueStateStream =>
+      Rx.combineLatest2<List<MediaItem>?, MediaItem?, QueueState>(
+          _audioHandler.queue,
+          _audioHandler.mediaItem,
+          (queue, mediaItem) => QueueState(queue, mediaItem));
+
+  Stream<bool> get playingStream =>
+      audioHandler.playbackState.map((s) => s.playing);
+
+  PlayerBloc(AudioHandler _audioHandler)
+      : super(_audioHandler.mediaItem.value != null
+            ? PlayerPlaying()
+            : PlayerEmpty()) {
+    this._audioHandler = _audioHandler;
+    _songs$ = BehaviorSubject();
+    _albums$ = BehaviorSubject();
+    _artists$ = BehaviorSubject();
+    _playlists$ = BehaviorSubject();
+    _playlist$ = BehaviorSubject();
+    _favorits$ = BehaviorSubject();
+    _songsSearch$ = BehaviorSubject();
+    _albumsSearch$ = BehaviorSubject();
+    _artistsSearch$ = BehaviorSubject();
+    _playlistsSearch$ = BehaviorSubject();
+    fetchMusicInformation();
     OnAudioQuery().queryDeviceInfo().then((value) => deviceModel = value);
   }
 
@@ -54,24 +172,23 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (event is PlayerPlay) {
       try {
         if (currentState is PlayerEmpty) {
-          final songInfo = _loadMediaItem(event.songInfo);
-          yield PlayerInitial(songInfo.items.first, false);
-          await _audioManager(songInfo);
-          yield PlayerPlaying(null, songInfo.items.first, false);
-          final playlist = _loadPlaylist(songInfo.items.first, event.playlist!);
-          await _addPlaylistToQueue(playlist.items);
-          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
-          return;
+          int sdk = deviceModel!.sdk;
+          await _audioHandler.updateQueue(event.playlist
+              .map((e) => MediaItem(
+                  id: e.uri,
+                  title: e.title,
+                  artUri: e.artwork == null
+                      ? Uri.parse("content://media/external/audio/albumart/" +
+                          e.id.toString())
+                      : Uri.dataFromString(e.artwork!),
+                  album: e.album,
+                  artist: e.artist,
+                  extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
+                  duration: Duration(milliseconds: e.duration)))
+              .toList());
+          _playlist$.add(event.playlist);
         }
-        if (currentState is PlayerPlaying) {
-          final songInfo = _loadMediaItem(event.songInfo);
-          yield PlayerInitial(songInfo.items.first, false);
-          await AudioService.updateQueue(songInfo.items);
-          final playlist = _loadPlaylist(songInfo.items.first, event.playlist!);
-          await _addPlaylistToQueue(playlist.items);
-          yield PlayerPlaying(playlist.items, songInfo.items.first, false);
-          return;
-        }
+        if (currentState is PlayerPlaying) {}
       } catch (_) {
         yield PlayerFailure();
       }
@@ -80,67 +197,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     }
   }
 
-  Future<void> _addPlaylistToQueue(List<MediaItem> playlist) async {
-    return AudioService.addQueueItems(playlist);
+  addToFavorits(int id) {
+    favorits$.add(favorits$.value
+      ..add(songs$.value.firstWhere((element) => element.id == id)));
   }
 
-  static Future<bool> _audioManager(MediaLibrary first) {
-    final Map<String, dynamic> params = {
-      'playlist': first.toJson(),
-    };
-    return _startAudioManager(params);
-  }
-
-  static Future<bool> _startAudioManager(var params) async =>
-      AudioService.start(
-        backgroundTaskEntrypoint: _audioPlayerTaskEntrypoint,
-        params: params,
-        androidNotificationChannelName: 'Music Player',
-        androidNotificationColor: 0xFF4989a2,
-        androidNotificationIcon: 'drawable/ic_notification',
-        androidEnableQueue: true,
-      );
-
-  static MediaLibrary _loadPlaylist(MediaItem first, List<SongModel> songList) {
-    List<MediaItem> playlist = [];
-
-    for (SongModel song in songList) {
-      //print(song);
-      playlist.add(MediaItem(
-          id: song.id.toString(),
-          album: song.album,
-          title: song.title,
-          artist: song.artist,
-          genre: song.composer,
-          artUri:
-              song.artwork != null ? Uri.dataFromString(song.artwork!) : null,
-          duration: Duration(milliseconds: song.duration)));
-    }
-
-    int i = playlist.indexOf(first);
-
-    if (i == 0) {
-      playlist.removeAt(0);
-      return MediaLibrary.from(playlist);
-    }
-    List<MediaItem> l1 = playlist.sublist(0, i - 1);
-    List<MediaItem> l2 = playlist.sublist(i + 1, playlist.length);
-
-    l2.addAll(l1);
-    return MediaLibrary.from(l2);
-  }
-
-  static MediaLibrary _loadMediaItem(SongModel first) {
-    List<MediaItem> playlist = [];
-    playlist.add(MediaItem(
-        id: first.id.toString(),
-        album: first.album,
-        title: first.title,
-        artist: first.artist,
-        genre: first.composer,
-        artUri:
-            first.artwork != null ? Uri.dataFromString(first.artwork!) : null,
-        duration: Duration(milliseconds: first.duration)));
-    return MediaLibrary.from(playlist);
+  removeFromFavorits(int id) {
+    favorits$.add(favorits$.value
+      ..remove(songs$.value.firstWhere((element) => element.id == id)));
   }
 }

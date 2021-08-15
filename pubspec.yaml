@@ -30,9 +30,12 @@ dependencies:
   cupertino_icons: ^1.0.3
 
   just_audio: ^0.8.0
-  audio_service: 
-    git:
-      https://github.com/Setrexis/audio_service
+  dependencies:
+  audio_service:
+    git: 
+      url: https://github.com/Setrexis/audio_service.git
+      ref: one-isolate
+      path: audio_service
   path_provider: ^2.0.2
   google_fonts: ^2.1.0
   collection: ^1.15.0
@@ -41,7 +44,9 @@ dependencies:
   equatable: ^2.0.3
   shared_preferences: ^2.0.6
   palette_generator: ^0.3.0
-  on_audio_query: ^1.1.1
+  on_audio_query:
+    git:
+      https://github.com/Setrexis/on_audio_query
 
 dev_dependencies:
   flutter_test:

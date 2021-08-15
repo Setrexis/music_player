@@ -5,14 +5,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:music_player/AudioPlayer.dart';
 import 'package:music_player/home.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
-import 'package:http/http.dart' as http;
+import 'package:audio_session/audio_session.dart';
 
-void main() {
+late AudioHandler _audioHandler;
+
+Future<void> main() async {
+  // store this in a singleton
+  _audioHandler = await AudioService.init(
+    builder: () => MyAudioHandler(),
+    config: AudioServiceConfig(
+        androidNotificationChannelId: 'com.ryanheise.myapp.channel.audio',
+        androidNotificationChannelName: 'Music Player',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+        androidShowNotificationBadge: true),
+  );
   runApp(MyApp());
-}
-
-void _audioPlayerTaskEntrypoint() async {
-  AudioServiceBackground.run(() => AudioPlayerTask());
 }
 
 class MyApp extends StatelessWidget {
@@ -20,20 +28,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PlayerBloc(),
-      child: BlocProvider(
-        create: (context) => PlayerBloc(),
-        child: MaterialApp(
-          title: 'Flutter Demo',
-          theme: ThemeData.dark().copyWith(
-              accentColor: Color(0xFF4989a2),
-              iconTheme: IconThemeData().copyWith(color: Color(0xFF4e606e)),
-              primaryColor: Colors.white,
-              textTheme: GoogleFonts.rubikTextTheme()),
-          home: AudioServiceWidget(
-            child: Home(),
-          ),
-        ),
+      create: (context) => PlayerBloc(_audioHandler),
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData.dark().copyWith(
+            accentColor: Color(0xffff16ce),
+            iconTheme: IconThemeData().copyWith(color: Colors.white),
+            primaryColor: Color(0xFF260e43),
+            textTheme: GoogleFonts.robotoTextTheme()),
+        home: Home(),
       ),
     );
   }

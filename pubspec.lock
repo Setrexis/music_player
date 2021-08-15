@@ -11,12 +11,26 @@ packages:
   audio_service:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "558eebbd56f6fafe0a08d7f46c6acaf26bbf101d"
-      url: "https://github.com/Setrexis/audio_service"
+      path: audio_service
+      ref: one-isolate
+      resolved-ref: a26cc014b8ae8c570f56d686cc50c2455c9bacd5
+      url: "https://github.com/Setrexis/audio_service.git"
     source: git
-    version: "0.17.1"
+    version: "0.16.2"
+  audio_service_platform_interface:
+    dependency: transitive
+    description:
+      name: audio_service_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.0"
+  audio_service_web:
+    dependency: transitive
+    description:
+      name: audio_service_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.0"
   audio_session:
     dependency: transitive
     description:
@@ -80,6 +94,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.3"
+  dependencies:
+    dependency: "direct main"
+    description:
+      name: dependencies
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.5"
+  disposables:
+    dependency: transitive
+    description:
+      name: disposables
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.2"
   equatable:
     dependency: "direct main"
     description:
@@ -127,13 +155,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.1.2"
-  flutter_isolate:
-    dependency: transitive
-    description:
-      name: flutter_isolate
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -217,10 +238,12 @@ packages:
   on_audio_query:
     dependency: "direct main"
     description:
-      name: on_audio_query
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.1.1"
+      path: "."
+      ref: HEAD
+      resolved-ref: "7ea20b54c262441bbf9806e842040022d168c5b1"
+      url: "https://github.com/Setrexis/on_audio_query"
+    source: git
+    version: "1.2.0"
   palette_generator:
     dependency: "direct main"
     description:
@@ -312,6 +335,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "5.0.0"
+  quiver:
+    dependency: transitive
+    description:
+      name: quiver
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.1.5"
   rxdart:
     dependency: transitive
     description:
@@ -473,4 +503,4 @@ packages:
     version: "5.1.2"
 sdks:
   dart: ">=2.13.0 <3.0.0"
-  flutter: ">=1.24.0-10"
+  flutter: ">=2.0.0"

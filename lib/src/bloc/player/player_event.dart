@@ -13,9 +13,9 @@ class PlayerStop extends PlayerEvent {}
 
 class PlayerPlay extends PlayerEvent {
   final SongModel songInfo;
-  final List<SongModel>? playlist;
+  final List<SongModel> playlist;
 
-  PlayerPlay(this.songInfo, this.playlist) : assert(playlist != null);
+  PlayerPlay(this.songInfo, this.playlist);
 
   @override
   List<Object?> get props => [songInfo, playlist];

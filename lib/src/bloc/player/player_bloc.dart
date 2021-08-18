@@ -31,6 +31,13 @@ class MediaState {
   MediaState(this.mediaItem, this.position, this.playing);
 }
 
+class SongAlbumStream {
+  final List<SongModel> songs;
+  final List<AlbumModel> albums;
+
+  SongAlbumStream(this.songs, this.albums);
+}
+
 class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   DeviceModel? deviceModel;
   late AudioHandler _audioHandler;
@@ -59,7 +66,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   AudioHandler get audioHandler => _audioHandler;
 
   Future<void> fetchMusicInformation() async {
-    print(await OnAudioQuery().permissionsStatus());
+    if (!await OnAudioQuery().permissionsStatus()) {
+      await OnAudioQuery().permissionsRequest();
+    }
     OnAudioQuery().queryArtists().then((value) => _artists$.add(value));
     OnAudioQuery().queryAlbums().then((value) => _albums$.add(value));
     OnAudioQuery().queryPlaylists().then((value) => _playlists$.add(value));
@@ -89,11 +98,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   void search(String search) {
-    if (search == "") {
+    if (search.trim() == "") {
       _songsSearch$.add([]);
       _albumsSearch$.add([]);
       _playlistsSearch$.add([]);
       _artistsSearch$.add([]);
+      return;
     }
     _searchArtists(search);
     _searchPlaylists(search);
@@ -103,27 +113,35 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
   void _searchSongs(String search) async {
     _songsSearch$.add(_songs$.value
-        .where((element) => element.title.contains(search))
+        .where((element) =>
+            element.title.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
 
   void _searchAlbums(String search) async {
     _albumsSearch$.add(_albums$.value
-        .where((element) => element.albumName.contains(search))
+        .where((element) =>
+            element.albumName.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
 
   void _searchArtists(String search) async {
     _artistsSearch$.add(_artists$.value
-        .where((element) => element.artistName.contains(search))
+        .where((element) =>
+            element.artistName.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
 
   void _searchPlaylists(String search) async {
     _playlistsSearch$.add(_playlists$.value
-        .where((element) => element.playlistName.contains(search))
+        .where((element) =>
+            element.playlistName.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
+
+  Stream<SongAlbumStream> get songAlbumStream =>
+      Rx.combineLatest2<List<SongModel>, List<AlbumModel>, SongAlbumStream>(
+          _songs$.stream, _albums$.stream, (a, b) => SongAlbumStream(a, b));
 
   /// A stream reporting the combined state of the current media item and its
   /// current position.

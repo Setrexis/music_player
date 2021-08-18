@@ -53,7 +53,7 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                         artworkWidth: MediaQuery.of(context).size.width - 100,
                         artworkBorder: BorderRadius.circular(100000000),
                         nullArtworkWidget: CircleAvatar(
-                          backgroundColor: Colors.pink,
+                          backgroundColor: Color(0xFF3e235f),
                           child: Icon(
                             Icons.music_note,
                             size: 60,

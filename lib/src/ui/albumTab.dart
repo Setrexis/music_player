@@ -9,18 +9,16 @@ import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
-class PlaylistOverview extends StatefulWidget {
-  final SongModel? coverSong;
-  final PlaylistModel playlist;
+class AlbumOverview extends StatefulWidget {
+  final AlbumModel album;
 
-  const PlaylistOverview({Key? key, this.coverSong, required this.playlist})
-      : super(key: key);
+  const AlbumOverview({Key? key, required this.album}) : super(key: key);
 
   @override
-  _PlaylistOverviewState createState() => _PlaylistOverviewState();
+  _AlbumOverviewState createState() => _AlbumOverviewState();
 }
 
-class _PlaylistOverviewState extends State<PlaylistOverview>
+class _AlbumOverviewState extends State<AlbumOverview>
     with TickerProviderStateMixin {
   late PlayerBloc _playerBloc;
   List<SongModel> songs = [];
@@ -50,11 +48,10 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
 
           if (snapshot.hasData) {
             snapshot.data!.forEach((element) {
-              widget.playlist.memberIDs.forEach((element2) {
-                if (element.id == int.tryParse(element2.toString())) {
-                  songs.add(element);
-                }
-              });
+              if (element.albumId ==
+                  int.tryParse(widget.album.albumId.toString())) {
+                songs.add(element);
+              }
             });
           }
 
@@ -64,7 +61,7 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
             appBar: AppBar(
               backgroundColor: Color(0xFF3e235f),
               elevation: 0.0,
-              title: Text("Playlist"),
+              title: Text("Album"),
               centerTitle: true,
               actions: [
                 IconButton(
@@ -93,9 +90,9 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                 artworkBorder: BorderRadius.circular(10),
                                 artworkHeight: 180,
                                 artworkWidth: 180,
-                                id: widget.coverSong!.id,
-                                type: ArtworkType.AUDIO,
-                                artwork: widget.coverSong!.artwork,
+                                id: widget.album.albumId,
+                                type: ArtworkType.ALBUM,
+                                artwork: widget.album.artwork,
                                 deviceSDK: _playerBloc.deviceModel!.sdk,
                                 keepOldArtwork: true,
                               ),
@@ -110,7 +107,7 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      widget.playlist.playlistName,
+                                      widget.album.albumName,
                                       overflow: TextOverflow.clip,
                                       maxLines: 4,
                                       style: TextStyle(
@@ -120,9 +117,14 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                     ),
                                     Padding(padding: EdgeInsets.only(top: 8)),
                                     Text(
-                                      widget.playlist.memberIDs.length
-                                              .toString() +
+                                      widget.album.numOfSongs.toString() +
                                           " Songs",
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                    Text(
+                                      widget.album.artist +
+                                          " · " +
+                                          widget.album.lastYear.toString(),
                                       style: TextStyle(color: Colors.white70),
                                     )
                                   ],
@@ -149,8 +151,7 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    widget.playlist.memberIDs.length
-                                            .toString() +
+                                    widget.album.numOfSongs.toString() +
                                         " Songs",
                                     style: TextStyle(color: Colors.white70),
                                   ),
@@ -185,7 +186,7 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                         child: SongListItem(
                           playerBloc: _playerBloc,
                           song: songs[index],
-                          onTap: playSong,
+                          onTap: () => playSong,
                         ),
                       );
                     }, childCount: songs.length),

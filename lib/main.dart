@@ -31,11 +31,12 @@ class MyApp extends StatelessWidget {
       create: (context) => PlayerBloc(_audioHandler),
       child: MaterialApp(
         title: 'Flutter Demo',
-        theme: ThemeData.dark().copyWith(
-            accentColor: Color(0xffff16ce),
-            iconTheme: IconThemeData().copyWith(color: Colors.white),
-            primaryColor: Color(0xFF260e43),
-            textTheme: GoogleFonts.robotoTextTheme()),
+        theme: ThemeData.light().copyWith(
+          accentColor: Color(0xffff16ce),
+          iconTheme: IconThemeData().copyWith(color: Colors.white),
+          primaryColor: Color(0xFF260e43),
+          textTheme: GoogleFonts.mavenProTextTheme(),
+        ),
         home: Home(),
       ),
     );

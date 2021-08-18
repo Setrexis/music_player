@@ -1,6 +1,9 @@
+import 'dart:ui';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/player.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
@@ -25,10 +28,10 @@ class _PlayerWidgetState extends State<PlayerWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: StreamBuilder<bool>(
-        stream: _playerBloc.playingStream,
+      child: StreamBuilder<MediaState>(
+        stream: _playerBloc.mediaStateStream,
         builder: (context, snapshot) {
-          if (!snapshot.hasData || !snapshot.data!) {
+          if (!snapshot.hasData || snapshot.data!.mediaItem == null) {
             return widget.child;
           }
           return Stack(
@@ -57,7 +60,7 @@ class _PlayerWidgetState extends State<PlayerWidget> {
                 left: 0,
                 right: 0,
               ),
-              Positioned(bottom: 0, child: BottomPlayerWidget())
+              Positioned(bottom: 10, child: BottomPlayerWidget())
             ],
           );
         },
@@ -103,77 +106,100 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
           }
           animationController.animateTo(
               snapshot.hasData && snapshot.data!.playing ? 0.0 : 1.0);
-          return Container(
-            height: 100,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned(
-                    left: 20,
-                    right: 20,
-                    bottom: 10,
+          return InkWell(
+            onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => PlayerOverview())),
+            child: Container(
+              height: 100,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                      left: 25,
+                      right: 25,
+                      bottom: 10,
+                      child: ClipRRect(
+                        child: Container(
+                          height: 80,
+                          color: Color(0xFF3e235f),
+                        ),
+                        borderRadius: BorderRadius.circular(50),
+                      )),
+                  Positioned(
+                    left: 25,
                     child: ClipRRect(
-                      child: Container(
-                        height: 80,
-                        color: Color(0xFF3e235f),
-                      ),
                       borderRadius: BorderRadius.circular(50),
-                    )),
-                Positioned(
-                  left: 20,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(50),
-                    child: Container(
-                      height: 90,
-                      width: 90,
-                      color: Color(0xFF3e235f),
-                      child: QueryArtworkWidget(
-                        id: snapshot.data!.mediaItem!.extras!["id"],
-                        type: ArtworkType.AUDIO,
-                        artwork: snapshot.data!.mediaItem!.album,
-                        deviceSDK: _playerBloc.deviceModel!.sdk,
-                        keepOldArtwork: true,
+                      child: Container(
+                        height: 90,
+                        width: 90,
+                        color: Color(0xFF3e235f),
+                        child: QueryArtworkWidget(
+                          id: snapshot.data!.mediaItem!.extras!["id"],
+                          type: ArtworkType.AUDIO,
+                          artwork: snapshot.data!.mediaItem!.album,
+                          deviceSDK: _playerBloc.deviceModel!.sdk,
+                          keepOldArtwork: true,
+                          nullArtworkWidget: Icon(
+                            Icons.music_note,
+                            size: 50,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                    left: 20,
-                    child: SizedBox(
-                      height: 92,
-                      width: 92,
-                      child: CircularProgressIndicator(
-                        value: snapshot.data!.position.inMilliseconds /
-                            snapshot.data!.mediaItem!.duration!.inMilliseconds,
-                        color: Color(0xffff16ce),
-                        backgroundColor: Color(0xFF3e235f),
-                      ),
-                    )),
-                Positioned(
-                    left: 130,
-                    right: 100,
-                    child: Text(
-                      snapshot.data!.mediaItem!.title,
-                      style: TextStyle(color: Colors.white),
-                    )),
-                Positioned(
-                  right: 30,
-                  child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Color(0xffff16ce),
-                      child: IconButton(
-                        onPressed: () => !snapshot.data!.playing
-                            ? _playerBloc.audioHandler.play()
-                            : _playerBloc.audioHandler.pause(),
-                        icon: AnimatedIcon(
-                          progress: animation,
-                          icon: AnimatedIcons.pause_play,
-                          color: Colors.white,
+                  Positioned(
+                      left: 25,
+                      child: SizedBox(
+                        height: 92,
+                        width: 92,
+                        child: CircularProgressIndicator(
+                          value: snapshot.data!.position.inMilliseconds /
+                              snapshot
+                                  .data!.mediaItem!.duration!.inMilliseconds,
+                          color: Color(0xffff16ce),
+                          backgroundColor: Color(0xFF3e235f),
                         ),
-                        iconSize: 30,
                       )),
-                ),
-              ],
+                  Positioned(
+                      left: 130,
+                      right: 100,
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              snapshot.data!.mediaItem!.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.clip,
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 18),
+                            ),
+                            Text(
+                              snapshot.data!.mediaItem!.artist! +
+                                  " · " +
+                                  snapshot.data!.mediaItem!.album!,
+                              style: TextStyle(color: Colors.white70),
+                            )
+                          ])),
+                  Positioned(
+                    right: 35,
+                    child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Color(0xffff16ce),
+                        child: IconButton(
+                          onPressed: () => !snapshot.data!.playing
+                              ? _playerBloc.audioHandler.play()
+                              : _playerBloc.audioHandler.pause(),
+                          icon: AnimatedIcon(
+                            progress: animation,
+                            icon: AnimatedIcons.pause_play,
+                            color: Colors.white,
+                          ),
+                          iconSize: 30,
+                        )),
+                  ),
+                ],
+              ),
             ),
           );
         },

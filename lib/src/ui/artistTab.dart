@@ -36,7 +36,7 @@ class _ArtistOverviewState extends State<ArtistOverview>
     try {
       http
           .get(Uri.parse(
-              "https://api.deezer.com/search?q=" + widget.artist.artistName))
+              "https://api.deezer.com/search?q=" + widget.artist.artist))
           .then((value) {
         url = jsonDecode(value.body)["data"][0]["artist"]["picture_medium"];
         setState(() {});
@@ -77,10 +77,9 @@ class _ArtistOverviewState extends State<ArtistOverview>
           }
 
           return Scaffold(
-            backgroundColor: Color(0xFF260e43),
             extendBodyBehindAppBar: false,
             appBar: AppBar(
-              backgroundColor: Color(0xFF3e235f),
+              backgroundColor: Theme.of(context).canvasColor,
               elevation: 0.0,
               title: Text("Artist"),
               centerTitle: true,
@@ -95,7 +94,7 @@ class _ArtistOverviewState extends State<ArtistOverview>
                 slivers: [
                   SliverToBoxAdapter(
                     child: Material(
-                      color: Color(0xFF3e235f),
+                      color: Theme.of(context).canvasColor,
                       elevation: 0,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -107,20 +106,22 @@ class _ArtistOverviewState extends State<ArtistOverview>
                             Material(
                                 borderRadius: BorderRadius.circular(10),
                                 elevation: 20,
-                                child: Image.network(
-                                  url,
-                                  height: 180,
-                                  width: 180,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      QueryArtworkWidget(
-                                    artworkBorder: BorderRadius.circular(10),
-                                    artworkHeight: 180,
-                                    artworkWidth: 180,
-                                    id: songs[0].id,
-                                    type: ArtworkType.AUDIO,
-                                    artwork: songs[0].artwork,
-                                    deviceSDK: _playerBloc.deviceModel!.sdk,
-                                    keepOldArtwork: true,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.network(
+                                    url,
+                                    height: 180,
+                                    width: 180,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            QueryArtworkWidget(
+                                      artworkBorder: BorderRadius.circular(10),
+                                      artworkHeight: 180,
+                                      artworkWidth: 180,
+                                      id: songs[0].id,
+                                      type: ArtworkType.AUDIO,
+                                      keepOldArtwork: true,
+                                    ),
                                   ),
                                 )),
                             Padding(
@@ -133,11 +134,10 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      widget.artist.artistName,
+                                      widget.artist.artist,
                                       overflow: TextOverflow.clip,
                                       maxLines: 4,
                                       style: TextStyle(
-                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 36),
                                     ),
@@ -145,11 +145,21 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                     Text(
                                       widget.artist.numberOfTracks.toString() +
                                           " Songs",
-                                      style: TextStyle(color: Colors.white70),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1!
+                                              .color!
+                                              .withAlpha(122)),
                                     ),
                                     Text(
-                                      widget.artist.numberOfAlbums + " Albums",
-                                      style: TextStyle(color: Colors.white70),
+                                      widget.artist.numberOfAlbums.toString() + " Albums",
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1!
+                                              .color!
+                                              .withAlpha(122)),
                                     )
                                   ],
                                 ),
@@ -163,11 +173,11 @@ class _ArtistOverviewState extends State<ArtistOverview>
                   SliverPersistentHeader(
                       pinned: true,
                       delegate: _SliverAppBarDelegate(
-                          minHeight: 40,
-                          maxHeight: 70,
+                          minHeight: 50,
+                          maxHeight: 50,
                           child: Material(
-                            elevation: 1,
-                            color: Color(0xFF260e43),
+                            elevation: 0,
+                            color: Theme.of(context).backgroundColor,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(30, 8, 30, 8),
                               child: Row(
@@ -177,13 +187,18 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                   Text(
                                     widget.artist.numberOfAlbums.toString() +
                                         " Albums",
-                                    style: TextStyle(color: Colors.white70),
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1!
+                                            .color!
+                                            .withAlpha(122)),
                                   ),
                                   DecoratedBox(
                                     decoration: BoxDecoration(
                                         gradient: LinearGradient(colors: [
-                                          Color(0xFF3e235f),
-                                          Color(0xffff16ce)
+                                          Theme.of(context).accentColor,
+                                          Theme.of(context).primaryColorLight
                                         ]),
                                         borderRadius:
                                             BorderRadius.circular(80)),
@@ -214,11 +229,11 @@ class _ArtistOverviewState extends State<ArtistOverview>
                   SliverPersistentHeader(
                       pinned: true,
                       delegate: _SliverAppBarDelegate(
-                          minHeight: 40,
-                          maxHeight: 70,
+                          minHeight: 50,
+                          maxHeight: 50,
                           child: Material(
-                            elevation: 1,
-                            color: Color(0xFF260e43),
+                            elevation: 0,
+                            color: Theme.of(context).backgroundColor,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(30, 8, 30, 8),
                               child: Row(
@@ -228,13 +243,18 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                   Text(
                                     widget.artist.numberOfTracks.toString() +
                                         " Songs",
-                                    style: TextStyle(color: Colors.white70),
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1!
+                                            .color!
+                                            .withAlpha(122)),
                                   ),
                                   DecoratedBox(
                                     decoration: BoxDecoration(
                                         gradient: LinearGradient(colors: [
-                                          Color(0xFF3e235f),
-                                          Color(0xffff16ce)
+                                          Theme.of(context).accentColor,
+                                          Theme.of(context).primaryColorLight
                                         ]),
                                         borderRadius:
                                             BorderRadius.circular(80)),
@@ -262,6 +282,7 @@ class _ArtistOverviewState extends State<ArtistOverview>
                           playerBloc: _playerBloc,
                           song: songs[index],
                           onTap: playSong,
+                          artist: false,
                         ),
                       );
                     }, childCount: songs.length),

@@ -56,10 +56,9 @@ class _AlbumOverviewState extends State<AlbumOverview>
           }
 
           return Scaffold(
-            backgroundColor: Color(0xFF260e43),
             extendBodyBehindAppBar: false,
             appBar: AppBar(
-              backgroundColor: Color(0xFF3e235f),
+              backgroundColor: Theme.of(context).canvasColor,
               elevation: 0.0,
               title: Text("Album"),
               centerTitle: true,
@@ -74,7 +73,7 @@ class _AlbumOverviewState extends State<AlbumOverview>
                 slivers: [
                   SliverToBoxAdapter(
                     child: Material(
-                      color: Color(0xFF3e235f),
+                      color: Theme.of(context).canvasColor,
                       elevation: 0,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -92,8 +91,6 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                 artworkWidth: 180,
                                 id: widget.album.albumId,
                                 type: ArtworkType.ALBUM,
-                                artwork: widget.album.artwork,
-                                deviceSDK: _playerBloc.deviceModel!.sdk,
                                 keepOldArtwork: true,
                               ),
                             ),
@@ -107,11 +104,10 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      widget.album.albumName,
+                                      widget.album.album,
                                       overflow: TextOverflow.clip,
                                       maxLines: 4,
                                       style: TextStyle(
-                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 36),
                                     ),
@@ -119,13 +115,23 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                     Text(
                                       widget.album.numOfSongs.toString() +
                                           " Songs",
-                                      style: TextStyle(color: Colors.white70),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1!
+                                              .color!
+                                              .withAlpha(122)),
                                     ),
                                     Text(
-                                      widget.album.artist +
+                                      widget.album.artist! +
                                           " · " +
                                           widget.album.lastYear.toString(),
-                                      style: TextStyle(color: Colors.white70),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1!
+                                              .color!
+                                              .withAlpha(122)),
                                     )
                                   ],
                                 ),
@@ -139,11 +145,11 @@ class _AlbumOverviewState extends State<AlbumOverview>
                   SliverPersistentHeader(
                       pinned: true,
                       delegate: _SliverAppBarDelegate(
-                          minHeight: 40,
-                          maxHeight: 70,
+                          minHeight: 50,
+                          maxHeight: 50,
                           child: Material(
-                            elevation: 1,
-                            color: Color(0xFF260e43),
+                            elevation: 0,
+                            color: Theme.of(context).backgroundColor,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(30, 8, 30, 8),
                               child: Row(
@@ -153,13 +159,18 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                   Text(
                                     widget.album.numOfSongs.toString() +
                                         " Songs",
-                                    style: TextStyle(color: Colors.white70),
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1!
+                                            .color!
+                                            .withAlpha(122)),
                                   ),
                                   DecoratedBox(
                                     decoration: BoxDecoration(
                                         gradient: LinearGradient(colors: [
-                                          Color(0xFF3e235f),
-                                          Color(0xffff16ce)
+                                          Theme.of(context).accentColor,
+                                          Theme.of(context).primaryColorLight
                                         ]),
                                         borderRadius:
                                             BorderRadius.circular(80)),
@@ -187,6 +198,7 @@ class _AlbumOverviewState extends State<AlbumOverview>
                           playerBloc: _playerBloc,
                           song: songs[index],
                           onTap: () => playSong,
+                          album: false,
                         ),
                       );
                     }, childCount: songs.length),

@@ -52,8 +52,10 @@ class _PlayerWidgetState extends State<PlayerWidget> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                        Color(0xFF260e43).withOpacity(0.0),
-                        Color(0xFF260e43),
+                        Theme.of(context)
+                            .scaffoldBackgroundColor
+                            .withOpacity(0.0),
+                        Theme.of(context).scaffoldBackgroundColor,
                       ])),
                 ),
                 bottom: 99,
@@ -121,7 +123,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                       child: ClipRRect(
                         child: Container(
                           height: 80,
-                          color: Color(0xFF3e235f),
+                          color: Theme.of(context).canvasColor,
                         ),
                         borderRadius: BorderRadius.circular(50),
                       )),
@@ -132,7 +134,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                       child: Container(
                         height: 90,
                         width: 90,
-                        color: Color(0xFF3e235f),
+                        color: Theme.of(context).canvasColor,
                         child: QueryArtworkWidget(
                           id: snapshot.data!.mediaItem!.extras!["id"],
                           type: ArtworkType.AUDIO,
@@ -156,8 +158,8 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                           value: snapshot.data!.position.inMilliseconds /
                               snapshot
                                   .data!.mediaItem!.duration!.inMilliseconds,
-                          color: Color(0xffff16ce),
-                          backgroundColor: Color(0xFF3e235f),
+                          color: Theme.of(context).accentColor,
+                          backgroundColor: Theme.of(context).backgroundColor,
                         ),
                       )),
                   Positioned(
@@ -171,21 +173,25 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                               snapshot.data!.mediaItem!.title,
                               maxLines: 2,
                               overflow: TextOverflow.clip,
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 18),
+                              style: TextStyle(fontSize: 18),
                             ),
                             Text(
                               snapshot.data!.mediaItem!.artist! +
                                   " · " +
                                   snapshot.data!.mediaItem!.album!,
-                              style: TextStyle(color: Colors.white70),
+                              style: TextStyle(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyText1!
+                                      .color!
+                                      .withAlpha(122)),
                             )
                           ])),
                   Positioned(
                     right: 35,
                     child: CircleAvatar(
                         radius: 30,
-                        backgroundColor: Color(0xffff16ce),
+                        backgroundColor: Theme.of(context).accentColor,
                         child: IconButton(
                           onPressed: () => !snapshot.data!.playing
                               ? _playerBloc.audioHandler.play()
@@ -193,7 +199,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                           icon: AnimatedIcon(
                             progress: animation,
                             icon: AnimatedIcons.pause_play,
-                            color: Colors.white,
+                            color: Theme.of(context).backgroundColor,
                           ),
                           iconSize: 30,
                         )),

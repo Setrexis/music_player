@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
+import 'package:music_player/src/ui/wiedergabeListTab.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 class PlayerOverview extends StatefulWidget {
@@ -26,7 +27,7 @@ class _PlayerOverviewState extends State<PlayerOverview> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF260e43),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         elevation: 0.0,
         backgroundColor: Colors.transparent,
@@ -34,7 +35,15 @@ class _PlayerOverviewState extends State<PlayerOverview> {
       ),
       extendBody: true,
       extendBodyBehindAppBar: true,
-      body: Padding(
+      body: Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+              Theme.of(context).canvasColor,
+              Theme.of(context).backgroundColor
+            ])),
         padding: const EdgeInsets.only(top: 50),
         child: StreamBuilder<MediaItem?>(
             stream: _playerBloc.audioHandler.mediaItem,
@@ -48,24 +57,23 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                 children: [
                   Container(
                     child: QueryArtworkWidget(
-                        size: (MediaQuery.of(context).size.width - 100).toInt(),
-                        artworkHeight: MediaQuery.of(context).size.width - 100,
-                        artworkWidth: MediaQuery.of(context).size.width - 100,
-                        artworkBorder: BorderRadius.circular(100000000),
-                        nullArtworkWidget: CircleAvatar(
-                          backgroundColor: Color(0xFF3e235f),
-                          child: Icon(
-                            Icons.music_note,
-                            size: 60,
-                          ),
-                          radius: (MediaQuery.of(context).size.width - 100)
-                                  .toInt() /
-                              2,
+                      size: (MediaQuery.of(context).size.width - 100).toInt(),
+                      artworkHeight: MediaQuery.of(context).size.width - 100,
+                      artworkWidth: MediaQuery.of(context).size.width - 100,
+                      artworkBorder: BorderRadius.circular(100000000),
+                      nullArtworkWidget: CircleAvatar(
+                        backgroundColor: Theme.of(context).backgroundColor,
+                        child: Icon(
+                          Icons.music_note,
+                          size: 60,
                         ),
-                        id: mediaState.data!.extras!["id"],
-                        type: ArtworkType.AUDIO,
-                        artwork: mediaState.data!.artUri.toString(),
-                        deviceSDK: _playerBloc.deviceModel!.sdk),
+                        radius:
+                            (MediaQuery.of(context).size.width - 100).toInt() /
+                                2,
+                      ),
+                      id: mediaState.data!.extras!["id"],
+                      type: ArtworkType.AUDIO,
+                    ),
                   ),
                   Container(
                     child: Column(
@@ -80,21 +88,23 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold),
+                                    fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ),
                             Padding(
                               padding: const EdgeInsets.fromLTRB(30, 0, 30, 25),
                               child: Text(
                                   mediaState.data!.artist! +
-                                      " | " +
+                                      " • " +
                                       mediaState.data!.album!,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: Colors.white70,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyText1!
+                                        .color!
+                                        .withAlpha(122),
                                   )),
                             )
                           ]),
@@ -164,24 +174,32 @@ class _PlayControllsState extends State<PlayControlls>
                 onPressed: () => _playerBloc.audioHandler
                     .setRepeatMode(AudioServiceRepeatMode.one),
                 icon: Icon(Icons.loop),
-                color: Colors.white70),
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyText1!
+                    .color!
+                    .withAlpha(122)),
             IconButton(
                 onPressed: () => _playerBloc.audioHandler.skipToPrevious(),
                 icon: Icon(Icons.skip_previous),
-                color: Colors.white70),
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyText1!
+                    .color!
+                    .withAlpha(180)),
             CircleAvatar(
               backgroundColor: Colors.transparent,
               radius: 55,
               child: Container(
                 decoration: BoxDecoration(boxShadow: [
                   BoxShadow(
-                      color: Color(0xffff16ce),
+                      color: Theme.of(context).primaryColorDark,
                       blurRadius: 50.0,
                       spreadRadius: 5.0)
                 ]),
                 child: CircleAvatar(
                   radius: 30,
-                  backgroundColor: Color(0xffff16ce),
+                  backgroundColor: Theme.of(context).accentColor,
                   child: StreamBuilder<bool>(
                       stream: _playerBloc.audioHandler.playbackState
                           .map((state) => state.playing)
@@ -196,7 +214,7 @@ class _PlayControllsState extends State<PlayControlls>
                           icon: AnimatedIcon(
                             progress: animation,
                             icon: AnimatedIcons.pause_play,
-                            color: Colors.white,
+                            color: Theme.of(context).backgroundColor,
                           ),
                           iconSize: 30,
                         );
@@ -207,12 +225,17 @@ class _PlayControllsState extends State<PlayControlls>
             IconButton(
               onPressed: () => _playerBloc.audioHandler.skipToNext(),
               icon: Icon(Icons.skip_next),
-              color: Colors.white70,
+              color:
+                  Theme.of(context).textTheme.bodyText1!.color!.withAlpha(180),
             ),
             IconButton(
                 onPressed: () => print("TODO"),
                 icon: Icon(Icons.volume_up),
-                color: Colors.white70),
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyText1!
+                    .color!
+                    .withAlpha(122)),
           ],
         ),
       ),
@@ -247,7 +270,7 @@ class _FutherActionsState extends State<FutherActions> {
           borderRadius: BorderRadius.circular(30),
           child: Container(
             height: 80,
-            color: Color(0xFF3e235f),
+            color: Theme.of(context).canvasColor,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -255,12 +278,14 @@ class _FutherActionsState extends State<FutherActions> {
                 IconButton(
                   onPressed: () => print("play/pause"),
                   icon: Icon(Icons.play_for_work),
-                  color: Colors.white,
                 ),
                 IconButton(
-                    onPressed: () => print("forward"),
-                    icon: Icon(Icons.playlist_play),
-                    color: Colors.white),
+                  onPressed: () =>
+                      Navigator.of(context).push(new MaterialPageRoute(
+                    builder: (context) => WiedergabeListe(),
+                  )),
+                  icon: Icon(Icons.playlist_play),
+                ),
                 StreamBuilder<List<SongModel>>(
                     stream: _playerBloc.favorits$.stream,
                     builder: (context, snapshot) {
@@ -273,7 +298,9 @@ class _FutherActionsState extends State<FutherActions> {
                             ? _playerBloc.removeFromFavorits(widget.id)
                             : _playerBloc.addToFavorits(widget.id),
                         icon: Icon(Icons.favorite),
-                        color: fav ? Color(0xffff16ce) : Colors.white70,
+                        color: fav
+                            ? Theme.of(context).accentColor
+                            : Theme.of(context).accentColor.withAlpha(122),
                       );
                     }),
               ],
@@ -320,8 +347,8 @@ class _SeekBarState extends State<SeekBar> {
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 1.5,
-              inactiveTrackColor: Color(0xFF3e235f),
-              activeTrackColor: Color(0xffff16ce),
+              inactiveTrackColor: Theme.of(context).canvasColor,
+              activeTrackColor: Theme.of(context).accentColor,
               thumbShape: SliderComponentShape.noThumb,
             ),
             child: Slider(
@@ -356,7 +383,13 @@ class _SeekBarState extends State<SeekBar> {
                       .firstMatch("${widget.duration}")
                       ?.group(1) ??
                   '${widget.duration}',
-              style: TextStyle(color: Color(0xFF3e235f), fontSize: 12)),
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyText1!
+                      .color!
+                      .withAlpha(122),
+                  fontSize: 12)),
         ),
         Positioned(
           left: 30.0,
@@ -366,7 +399,13 @@ class _SeekBarState extends State<SeekBar> {
                     .firstMatch("${widget.position}")
                     ?.group(1) ??
                 '${widget.position}',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyText1!
+                    .color!
+                    .withAlpha(122),
+                fontSize: 12),
           ),
         ),
       ],

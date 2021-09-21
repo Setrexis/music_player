@@ -43,158 +43,166 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<SongModel>>(
-        stream: _playerBloc.songs$.stream,
-        builder: (context, snapshot) {
-          songs = [];
+    return Scaffold(
+        extendBodyBehindAppBar: false,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).canvasColor,
+          elevation: 0.0,
+          title: Text("Playlist"),
+          centerTitle: true,
+          actions: [
+            IconButton(
+                onPressed: () => print("object"), icon: Icon(Icons.more_vert))
+          ],
+        ),
+        body: PlayerWidget(
+            child: StreamBuilder<List<SongModel>>(
+                stream: _playerBloc.songs$.stream,
+                builder: (context, snapshot) {
+                  songs = [];
 
-          if (snapshot.hasData) {
-            snapshot.data!.forEach((element) {
-              widget.playlist.memberIDs.forEach((element2) {
-                if (element.id == int.tryParse(element2.toString())) {
-                  songs.add(element);
-                }
-              });
-            });
-          }
-
-          return Scaffold(
-            backgroundColor: Color(0xFF260e43),
-            extendBodyBehindAppBar: false,
-            appBar: AppBar(
-              backgroundColor: Color(0xFF3e235f),
-              elevation: 0.0,
-              title: Text("Playlist"),
-              centerTitle: true,
-              actions: [
-                IconButton(
-                    onPressed: () => print("object"),
-                    icon: Icon(Icons.more_vert))
-              ],
-            ),
-            body: PlayerWidget(
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Material(
-                      color: Color(0xFF3e235f),
-                      elevation: 0,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 30),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Material(
-                              borderRadius: BorderRadius.circular(10),
-                              elevation: 20,
-                              child: QueryArtworkWidget(
-                                artworkBorder: BorderRadius.circular(10),
-                                artworkHeight: 180,
-                                artworkWidth: 180,
-                                id: widget.coverSong!.id,
-                                type: ArtworkType.AUDIO,
-                                artwork: widget.coverSong!.artwork,
-                                deviceSDK: _playerBloc.deviceModel!.sdk,
-                                keepOldArtwork: true,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(15, 0, 30, 0),
-                              child: Container(
-                                width: MediaQuery.of(context).size.width - 265,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      widget.playlist.playlistName,
-                                      overflow: TextOverflow.clip,
-                                      maxLines: 4,
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 36),
-                                    ),
-                                    Padding(padding: EdgeInsets.only(top: 8)),
-                                    Text(
-                                      widget.playlist.memberIDs.length
-                                              .toString() +
-                                          " Songs",
-                                      style: TextStyle(color: Colors.white70),
-                                    )
-                                  ],
+                  if (snapshot.hasData) {
+                    snapshot.data!.forEach((element) {
+                      widget.playlist.memberIDs.forEach((element2) {
+                        if (element.id == int.tryParse(element2.toString())) {
+                          songs.add(element);
+                        }
+                      });
+                    });
+                  }
+                  return CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Material(
+                          color: Theme.of(context).canvasColor,
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 30),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Material(
+                                  borderRadius: BorderRadius.circular(10),
+                                  elevation: 20,
+                                  child: QueryArtworkWidget(
+                                    artworkBorder: BorderRadius.circular(10),
+                                    artworkHeight: 180,
+                                    artworkWidth: 180,
+                                    id: widget.coverSong!.id,
+                                    type: ArtworkType.AUDIO,
+                                    keepOldArtwork: true,
+                                  ),
                                 ),
-                              ),
-                            )
-                          ],
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 0, 30, 0),
+                                  child: Container(
+                                    width:
+                                        MediaQuery.of(context).size.width - 265,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          widget.playlist.playlist,
+                                          overflow: TextOverflow.clip,
+                                          maxLines: 4,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 36),
+                                        ),
+                                        Padding(
+                                            padding: EdgeInsets.only(top: 8)),
+                                        Text(
+                                          widget.playlist.memberIDs.length
+                                                  .toString() +
+                                              " Songs",
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText1!
+                                                  .color!
+                                                  .withAlpha(122)),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _SliverAppBarDelegate(
-                          minHeight: 40,
-                          maxHeight: 70,
-                          child: Material(
-                            elevation: 1,
-                            color: Color(0xFF260e43),
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(30, 8, 30, 8),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    widget.playlist.memberIDs.length
-                                            .toString() +
-                                        " Songs",
-                                    style: TextStyle(color: Colors.white70),
+                      SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _SliverAppBarDelegate(
+                              minHeight: 50,
+                              maxHeight: 50,
+                              child: Material(
+                                elevation: 0,
+                                color: Theme.of(context).backgroundColor,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(30, 8, 30, 8),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        widget.playlist.memberIDs.length
+                                                .toString() +
+                                            " Songs",
+                                        style: TextStyle(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyText1!
+                                                .color!
+                                                .withAlpha(122)),
+                                      ),
+                                      DecoratedBox(
+                                        decoration: BoxDecoration(
+                                            gradient: LinearGradient(colors: [
+                                              Theme.of(context).accentColor,
+                                              Theme.of(context)
+                                                  .primaryColorLight
+                                            ]),
+                                            borderRadius:
+                                                BorderRadius.circular(80)),
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            _playerBloc.add(
+                                                PlayerPlay(songs.first, songs));
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                              primary: Colors.transparent,
+                                              elevation: 0.0),
+                                          child: Text('Play all'),
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                  DecoratedBox(
-                                    decoration: BoxDecoration(
-                                        gradient: LinearGradient(colors: [
-                                          Color(0xFF3e235f),
-                                          Color(0xffff16ce)
-                                        ]),
-                                        borderRadius:
-                                            BorderRadius.circular(80)),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        _playerBloc.add(
-                                            PlayerPlay(songs.first, songs));
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                          primary: Colors.transparent,
-                                          elevation: 0.0),
-                                      child: Text('Play all'),
-                                    ),
-                                  )
-                                ],
-                              ),
+                                ),
+                              ))),
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 5, horizontal: 30),
+                            child: SongListItem(
+                              playerBloc: _playerBloc,
+                              song: songs[index],
+                              onTap: playSong,
                             ),
-                          ))),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 30),
-                        child: SongListItem(
-                          playerBloc: _playerBloc,
-                          song: songs[index],
-                          onTap: playSong,
-                        ),
-                      );
-                    }, childCount: songs.length),
-                  )
-                ],
-              ),
-            ),
-          );
-        });
+                          );
+                        }, childCount: songs.length),
+                      )
+                    ],
+                  );
+                })));
   }
 }
 

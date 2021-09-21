@@ -48,6 +48,7 @@ dependencies:
   on_audio_query:
     git:
       https://github.com/Setrexis/on_audio_query
+  share_plus: ^2.1.4
 
 dev_dependencies:
   flutter_test:

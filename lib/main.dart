@@ -32,11 +32,31 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData.light().copyWith(
-          accentColor: Color(0xffff16ce),
-          iconTheme: IconThemeData().copyWith(color: Colors.white),
-          primaryColor: Color(0xFF260e43),
-          textTheme: GoogleFonts.mavenProTextTheme(),
-        ),
+            accentColor: Color(0xffF07300),
+            primaryColorDark: Color(0xFFE06A3A),
+            iconTheme: IconThemeData().copyWith(color: Color(0xff050517)),
+            primaryColor: Color(0xfff2e7eb),
+            primaryColorLight: Color(0xffECA100),
+            textTheme: GoogleFonts.mavenProTextTheme(),
+            canvasColor: Color(0xfff2e7eb),
+            backgroundColor: Colors.white,
+            appBarTheme: AppBarTheme(
+                brightness: Brightness.dark,
+                titleTextStyle: TextStyle(color: Color(0xff050517)),
+                iconTheme: IconThemeData().copyWith(color: Color(0xff050517)),
+                actionsIconTheme:
+                    IconThemeData().copyWith(color: Color(0xff050517)))),
+        darkTheme: ThemeData.dark().copyWith(
+            accentColor: Color(0xffF07300),
+            primaryColorDark: Color(0xFFE06A3A),
+            iconTheme: IconThemeData().copyWith(color: Colors.white),
+            primaryColor: Color(0xff1B0E13),
+            primaryColorLight: Color(0xffECA100),
+            textTheme: GoogleFonts.mavenProTextTheme(
+                ThemeData(brightness: Brightness.dark).textTheme),
+            canvasColor: Color(0xff1B0E13),
+            backgroundColor: Colors.black,
+            scaffoldBackgroundColor: Color(0xff050517)),
         home: Home(),
       ),
     );

@@ -98,13 +98,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   void search(String search) {
-    if (search.trim() == "") {
+    /*if (search.trim() == "") {
       _songsSearch$.add([]);
       _albumsSearch$.add([]);
       _playlistsSearch$.add([]);
       _artistsSearch$.add([]);
       return;
-    }
+    }*/
     _searchArtists(search);
     _searchPlaylists(search);
     _searchAlbums(search);
@@ -121,21 +121,21 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   void _searchAlbums(String search) async {
     _albumsSearch$.add(_albums$.value
         .where((element) =>
-            element.albumName.toLowerCase().contains(search.toLowerCase()))
+            element.album.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
 
   void _searchArtists(String search) async {
     _artistsSearch$.add(_artists$.value
         .where((element) =>
-            element.artistName.toLowerCase().contains(search.toLowerCase()))
+            element.artist.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
 
   void _searchPlaylists(String search) async {
     _playlistsSearch$.add(_playlists$.value
         .where((element) =>
-            element.playlistName.toLowerCase().contains(search.toLowerCase()))
+            element.playlist.toLowerCase().contains(search.toLowerCase()))
         .toList());
   }
 
@@ -181,6 +181,30 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _playlistsSearch$ = BehaviorSubject();
     fetchMusicInformation();
     OnAudioQuery().queryDeviceInfo().then((value) => deviceModel = value);
+    this._audioHandler.queue.listen((event) {
+      updatePlaylist();
+    });
+    this._audioHandler.mediaItem.listen((event) {
+      updatePlaylist();
+    });
+  }
+
+  updatePlaylist() {
+    List<SongModel> queue = [];
+    List<SongModel> playlist = _songs$.value;
+    this
+        ._audioHandler
+        .queue
+        .value
+        .skipWhile((value) => value == this._audioHandler.mediaItem.value)
+        .forEach((element) {
+      playlist.forEach((element2) {
+        if (element.id == element2.uri) {
+          queue.add(element2);
+        }
+      });
+    });
+    _playlist$.add(queue);
   }
 
   @override
@@ -190,21 +214,19 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (event is PlayerPlay) {
       try {
         if (currentState is PlayerEmpty) {
-          int sdk = deviceModel!.sdk;
+          int sdk = deviceModel!.version;
           await _audioHandler.updateQueue(event.playlist
               .map((e) => MediaItem(
-                  id: e.uri,
+                  id: e.uri!,
                   title: e.title,
-                  artUri: e.artwork == null
-                      ? Uri.parse("content://media/external/audio/albumart/" +
-                          e.id.toString())
-                      : Uri.dataFromString(e.artwork!),
+                  artUri: Uri.parse("content://media/external/audio/albumart/" +
+                      e.id.toString()),
                   album: e.album,
                   artist: e.artist,
                   extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
-                  duration: Duration(milliseconds: e.duration)))
+                  duration: Duration(milliseconds: e.duration!)))
               .toList());
-          _playlist$.add(event.playlist);
+          _playlist$.add(event.playlist.sublist(1));
         }
         if (currentState is PlayerPlaying) {}
       } catch (_) {
@@ -223,5 +245,38 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   removeFromFavorits(int id) {
     favorits$.add(favorits$.value
       ..remove(songs$.value.firstWhere((element) => element.id == id)));
+  }
+
+  switchQueueItems(int newIndex, String uri) async {
+    print("ksjfklsdf");
+    MediaItem m =
+        _audioHandler.queue.value.firstWhere((element) => element.id == uri);
+    await _audioHandler.removeQueueItem(m);
+    print("sakdfkl");
+    _audioHandler.insertQueueItem(
+        newIndex +
+            _audioHandler.queue.value
+                .indexOf(this._audioHandler.mediaItem.value!),
+        m);
+  }
+
+  removeQueueItem(String uri) {
+    _audioHandler.removeQueueItem(
+        _audioHandler.queue.value.firstWhere((element) => element.id == uri));
+  }
+
+  addItemToQuoue(SongModel song) {
+    _audioHandler.insertQueueItem(
+        _audioHandler.queue.value.indexOf(this._audioHandler.mediaItem.value!),
+        MediaItem(
+            id: song.uri!,
+            title: song.title,
+            artUri: Uri.parse("content://media/external/audio/albumart/" +
+                song.id.toString()),
+            album: song.album,
+            artist: song.artist,
+            extras: Map.fromIterables(
+                ["id", "sdk"], [song.id, deviceModel!.version]),
+            duration: Duration(milliseconds: song.duration!)));
   }
 }

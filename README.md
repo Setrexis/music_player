@@ -1,6 +1,6 @@
 # music_player
 
-A new Flutter project.
+Simple Music Player build with Flutter.
 
 ## Getting Started
 

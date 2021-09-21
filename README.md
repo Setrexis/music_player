@@ -9,6 +9,7 @@ Music player features:
 - favorites
 - search for song, artist, playlist and album
 - background playback
+- light and dark theme
 
 ## Development
 

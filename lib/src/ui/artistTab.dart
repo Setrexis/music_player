@@ -4,8 +4,8 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/home.dart';
-import 'package:music_player/playerWidget.dart';
+import 'package:music_player/src/ui/home.dart';
+import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -153,7 +153,8 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                               .withAlpha(122)),
                                     ),
                                     Text(
-                                      widget.artist.numberOfAlbums.toString() + " Albums",
+                                      widget.artist.numberOfAlbums.toString() +
+                                          " Albums",
                                       style: TextStyle(
                                           color: Theme.of(context)
                                               .textTheme

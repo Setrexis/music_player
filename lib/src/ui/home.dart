@@ -5,7 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/playerWidget.dart';
+import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/albumTab.dart';
@@ -163,6 +163,9 @@ class CoustomSearchDelegate extends SearchDelegate {
       IconButton(
         icon: Icon(Icons.clear),
         onPressed: () {
+          if (query == '') {
+            close(context, null);
+          }
           query = '';
         },
       ),
@@ -207,7 +210,7 @@ class SearchResult extends StatefulWidget {
 }
 
 class _SearchResultState extends State<SearchResult> {
-  int? _value = 1;
+  int? _value;
   @override
   Widget build(BuildContext context) {
     return Padding(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/home.dart';
-import 'package:music_player/playerWidget.dart';
+import 'package:music_player/src/ui/home.dart';
+import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:music_player/AudioPlayer.dart';
-import 'package:music_player/home.dart';
+import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:audio_session/audio_session.dart';
 
@@ -34,18 +34,18 @@ class MyApp extends StatelessWidget {
         theme: ThemeData.light().copyWith(
             accentColor: Color(0xffF07300),
             primaryColorDark: Color(0xFFE06A3A),
-            iconTheme: IconThemeData().copyWith(color: Color(0xff050517)),
+            iconTheme: IconThemeData().copyWith(color: Colors.black),
             primaryColor: Color(0xfff2e7eb),
             primaryColorLight: Color(0xffECA100),
             textTheme: GoogleFonts.mavenProTextTheme(),
             canvasColor: Color(0xfff2e7eb),
             backgroundColor: Colors.white,
             appBarTheme: AppBarTheme(
-                brightness: Brightness.dark,
-                titleTextStyle: TextStyle(color: Color(0xff050517)),
-                iconTheme: IconThemeData().copyWith(color: Color(0xff050517)),
+                titleTextStyle: TextStyle(color: Colors.black),
+                toolbarTextStyle: TextStyle(color: Colors.black),
+                iconTheme: IconThemeData().copyWith(color: Colors.black),
                 actionsIconTheme:
-                    IconThemeData().copyWith(color: Color(0xff050517)))),
+                    IconThemeData().copyWith(color: Colors.black))),
         darkTheme: ThemeData.dark().copyWith(
             accentColor: Color(0xffF07300),
             primaryColorDark: Color(0xFFE06A3A),
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
                 ThemeData(brightness: Brightness.dark).textTheme),
             canvasColor: Color(0xff1B0E13),
             backgroundColor: Colors.black,
-            scaffoldBackgroundColor: Color(0xff050517)),
+            scaffoldBackgroundColor: Colors.black),
         home: Home(),
       ),
     );

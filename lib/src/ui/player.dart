@@ -170,15 +170,31 @@ class _PlayControllsState extends State<PlayControlls>
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            IconButton(
-                onPressed: () => _playerBloc.audioHandler
-                    .setRepeatMode(AudioServiceRepeatMode.one),
-                icon: Icon(Icons.loop),
-                color: Theme.of(context)
-                    .textTheme
-                    .bodyText1!
-                    .color!
-                    .withAlpha(122)),
+            StreamBuilder<PlaybackState>(
+                stream: _playerBloc.audioHandler.playbackState,
+                builder: (context, snapshot) {
+                  Icon icon = snapshot.hasData
+                      ? snapshot.data!.shuffleMode ==
+                              AudioServiceShuffleMode.all
+                          ? Icon(Icons.shuffle_on)
+                          : Icon(Icons.loop)
+                      : Icon(Icons.loop);
+                  return IconButton(
+                      onPressed: () => {
+                            snapshot.data!.shuffleMode ==
+                                    AudioServiceShuffleMode.all
+                                ? _playerBloc.audioHandler.setShuffleMode(
+                                    AudioServiceShuffleMode.none)
+                                : _playerBloc.audioHandler
+                                    .setShuffleMode(AudioServiceShuffleMode.all)
+                          },
+                      icon: icon,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyText1!
+                          .color!
+                          .withAlpha(122));
+                }),
             IconButton(
                 onPressed: () => _playerBloc.audioHandler.skipToPrevious(),
                 icon: Icon(Icons.skip_previous),
@@ -276,7 +292,7 @@ class _FutherActionsState extends State<FutherActions> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
-                  onPressed: () => print("play/pause"),
+                  onPressed: () => print("TODO"),
                   icon: Icon(Icons.play_for_work),
                 ),
                 IconButton(

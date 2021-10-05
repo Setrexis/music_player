@@ -2,10 +2,6 @@ import 'dart:ffi';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/src/bloc/player/player_event.dart';
-import 'package:music_player/src/bloc/player/player_state.dart';
-import 'package:bloc/bloc.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'dart:async';
@@ -38,7 +34,7 @@ class SongAlbumStream {
   SongAlbumStream(this.songs, this.albums);
 }
 
-class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
+class PlayerBloc {
   DeviceModel? deviceModel;
   late AudioHandler _audioHandler;
   late BehaviorSubject<List<SongModel>> _songs$;
@@ -164,10 +160,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   Stream<bool> get playingStream =>
       audioHandler.playbackState.map((s) => s.playing);
 
-  PlayerBloc(AudioHandler _audioHandler)
-      : super(_audioHandler.mediaItem.value != null
-            ? PlayerPlaying()
-            : PlayerEmpty()) {
+  PlayerBloc(AudioHandler _audioHandler) {
     this._audioHandler = _audioHandler;
     _songs$ = BehaviorSubject();
     _albums$ = BehaviorSubject();
@@ -207,34 +200,20 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _playlist$.add(queue);
   }
 
-  @override
-  Stream<PlayerState> mapEventToState(PlayerEvent event) async* {
-    final PlayerState currentState = state;
-
-    if (event is PlayerPlay) {
-      try {
-        if (currentState is PlayerEmpty) {
-          int sdk = deviceModel!.version;
-          await _audioHandler.updateQueue(event.playlist
-              .map((e) => MediaItem(
-                  id: e.uri!,
-                  title: e.title,
-                  artUri: Uri.parse("content://media/external/audio/albumart/" +
-                      e.id.toString()),
-                  album: e.album,
-                  artist: e.artist,
-                  extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
-                  duration: Duration(milliseconds: e.duration!)))
-              .toList());
-          _playlist$.add(event.playlist.sublist(1));
-        }
-        if (currentState is PlayerPlaying) {}
-      } catch (_) {
-        yield PlayerFailure();
-      }
-    } else if (event is PlayerStop) {
-      yield PlayerEmpty();
-    }
+  void startPlayback(List<SongModel> playlist) async {
+    int sdk = deviceModel!.version;
+    await _audioHandler.updateQueue(playlist
+        .map((e) => MediaItem(
+            id: e.uri!,
+            title: e.title,
+            artUri: Uri.parse(
+                "content://media/external/audio/albumart/" + e.id.toString()),
+            album: e.album,
+            artist: e.artist,
+            extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
+            duration: Duration(milliseconds: e.duration!)))
+        .toList());
+    _playlist$.add(playlist.sublist(1));
   }
 
   addToFavorits(int id) {

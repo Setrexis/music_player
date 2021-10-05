@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/ui/wiedergabeListTab.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -15,17 +16,15 @@ class PlayerOverview extends StatefulWidget {
 }
 
 class _PlayerOverviewState extends State<PlayerOverview> {
-  late PlayerBloc _playerBloc;
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -146,7 +145,6 @@ class PlayControlls extends StatefulWidget {
 
 class _PlayControllsState extends State<PlayControlls>
     with SingleTickerProviderStateMixin {
-  late PlayerBloc _playerBloc;
   late AnimationController animationController;
   late Animation<double> animation;
 
@@ -154,7 +152,6 @@ class _PlayControllsState extends State<PlayControlls>
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
     animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
     animation =
@@ -163,6 +160,7 @@ class _PlayControllsState extends State<PlayControlls>
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       child: Container(
@@ -268,17 +266,15 @@ class FutherActions extends StatefulWidget {
 }
 
 class _FutherActionsState extends State<FutherActions> {
-  late PlayerBloc _playerBloc;
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Container(
       child: Padding(
         padding: EdgeInsets.fromLTRB(30, 30, 30, 0),

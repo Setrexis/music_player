@@ -5,9 +5,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
-import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/artistTab.dart';
 import 'package:music_player/src/ui/playlistTab.dart';
@@ -24,14 +24,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   TextEditingController _searchQueryController = TextEditingController();
   bool _isSearching = false;
   String searchQuery = "";
-
-  late PlayerBloc _playerBloc;
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
   @override
@@ -110,17 +106,15 @@ class SearchBarWidget extends StatefulWidget {
 }
 
 class _SearchBarWidgetState extends State<SearchBarWidget> {
-  late PlayerBloc _playerBloc;
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Padding(
       padding: const EdgeInsets.fromLTRB(30, 5, 30, 5),
       child: Container(
@@ -408,17 +402,9 @@ class RecentPlayedPlaylistWidget extends StatefulWidget {
 
 class _RecentPlayedPlaylistWidgetState
     extends State<RecentPlayedPlaylistWidget> {
-  late PlayerBloc _playerBloc;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Container(
       height: 370,
       padding: EdgeInsets.fromLTRB(0, 10, 0, 0),
@@ -482,17 +468,10 @@ class PlaylistWidget extends StatefulWidget {
 
 class _PlaylistWidgetState extends State<PlaylistWidget> {
   SongModel? firstPlaylistSong;
-  late PlayerBloc _playerBloc;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
-  }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return InkWell(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => PlaylistOverview(
@@ -556,27 +535,19 @@ class FavroritSongsWidget extends StatefulWidget {
 }
 
 class _FavroritSongWidgetState extends State<FavroritSongsWidget> {
-  late PlayerBloc _playerBloc;
   List<SongModel> songs = [];
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
-  }
-
-  void playSong(SongModel song) {
+  void playSong(SongModel song, PlayerBloc playerBloc) {
     if (songs == []) {
       return;
     }
     var i = songs.indexOf(song);
-    _playerBloc
-        .add(PlayerPlay(song, songs.sublist(i)..addAll(songs.sublist(0, i))));
+    playerBloc.startPlayback(songs.sublist(i)..addAll(songs.sublist(0, i)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Padding(
       padding: const EdgeInsets.fromLTRB(30, 0, 30, 20),
       child: Column(
@@ -638,8 +609,8 @@ class SongListItem extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: InkWell(
         onTap: () => onTap == null
-            ? _playerBloc.add(PlayerPlay(song, [song]))
-            : onTap!(song),
+            ? _playerBloc.startPlayback([song])
+            : onTap!(song, _playerBloc),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,

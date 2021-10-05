@@ -4,10 +4,10 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
-import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,7 +22,6 @@ class ArtistOverview extends StatefulWidget {
 
 class _ArtistOverviewState extends State<ArtistOverview>
     with TickerProviderStateMixin {
-  late PlayerBloc _playerBloc;
   String url =
       "https://cdns-images.dzcdn.net/images/artist//250x250-000000-80-0-0.jpg";
   List<SongModel> songs = [];
@@ -31,7 +30,6 @@ class _ArtistOverviewState extends State<ArtistOverview>
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
 
     try {
       http
@@ -46,17 +44,17 @@ class _ArtistOverviewState extends State<ArtistOverview>
     }
   }
 
-  void playSong(SongModel song) {
+  void playSong(SongModel song, PlayerBloc playerBloc) {
     if (songs == []) {
       return;
     }
     var i = songs.indexOf(song);
-    _playerBloc
-        .add(PlayerPlay(song, songs.sublist(i)..addAll(songs.sublist(0, i))));
+    playerBloc.startPlayback(songs.sublist(i)..addAll(songs.sublist(0, i)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return StreamBuilder<SongAlbumStream>(
         stream: _playerBloc.songAlbumStream,
         builder: (context, snapshot) {
@@ -204,10 +202,8 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                         borderRadius:
                                             BorderRadius.circular(80)),
                                     child: ElevatedButton(
-                                      onPressed: () {
-                                        _playerBloc.add(
-                                            PlayerPlay(songs.first, songs));
-                                      },
+                                      onPressed: () =>
+                                          playSong(songs.first, _playerBloc),
                                       style: ElevatedButton.styleFrom(
                                           primary: Colors.transparent,
                                           elevation: 0.0),
@@ -260,10 +256,8 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                         borderRadius:
                                             BorderRadius.circular(80)),
                                     child: ElevatedButton(
-                                      onPressed: () {
-                                        _playerBloc.add(
-                                            PlayerPlay(songs.first, songs));
-                                      },
+                                      onPressed: () => playSong(songs.first,
+                                          _playerBloc), // TODO change
                                       style: ElevatedButton.styleFrom(
                                           primary: Colors.transparent,
                                           elevation: 0.0),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:music_player/AudioPlayer.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:audio_session/audio_session.dart';
@@ -27,8 +28,8 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => PlayerBloc(_audioHandler),
+    return InheritedProvider(
+      inheritedData: PlayerBloc(_audioHandler),
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData.light().copyWith(

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/player.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -17,16 +18,15 @@ class PlayerWidget extends StatefulWidget {
 }
 
 class _PlayerWidgetState extends State<PlayerWidget> {
-  late PlayerBloc _playerBloc;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Container(
       child: StreamBuilder<MediaState>(
         stream: _playerBloc.mediaStateStream,
@@ -80,7 +80,6 @@ class BottomPlayerWidget extends StatefulWidget {
 
 class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
     with SingleTickerProviderStateMixin {
-  late PlayerBloc _playerBloc;
   late AnimationController animationController;
   late Animation<double> animation;
 
@@ -88,7 +87,6 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
     animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
     animation =
@@ -97,6 +95,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
 
   @override
   Widget build(BuildContext context) {
+    final PlayerBloc _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Container(
       height: 100,
       width: MediaQuery.of(context).size.width,

@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
-import 'package:music_player/src/bloc/player/player_event.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 class AlbumOverview extends StatefulWidget {
@@ -20,27 +20,25 @@ class AlbumOverview extends StatefulWidget {
 
 class _AlbumOverviewState extends State<AlbumOverview>
     with TickerProviderStateMixin {
-  late PlayerBloc _playerBloc;
   List<SongModel> songs = [];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
-  void playSong(SongModel song) {
+  void playSong(SongModel song, PlayerBloc playerBloc) {
     if (songs == []) {
       return;
     }
     var i = songs.indexOf(song);
-    _playerBloc
-        .add(PlayerPlay(song, songs.sublist(i)..addAll(songs.sublist(0, i))));
+    playerBloc.startPlayback(songs.sublist(i)..addAll(songs.sublist(0, i)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return StreamBuilder<List<SongModel>>(
         stream: _playerBloc.songs$.stream,
         builder: (context, snapshot) {
@@ -175,10 +173,8 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                         borderRadius:
                                             BorderRadius.circular(80)),
                                     child: ElevatedButton(
-                                      onPressed: () {
-                                        _playerBloc.add(
-                                            PlayerPlay(songs.first, songs));
-                                      },
+                                      onPressed: () =>
+                                          playSong(songs.first, _playerBloc),
                                       style: ElevatedButton.styleFrom(
                                           primary: Colors.transparent,
                                           elevation: 0.0),

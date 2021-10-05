@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
@@ -13,17 +14,15 @@ class WiedergabeListe extends StatefulWidget {
 }
 
 class _WiedergabeListeState extends State<WiedergabeListe> {
-  late PlayerBloc _playerBloc;
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _playerBloc = BlocProvider.of<PlayerBloc>(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(

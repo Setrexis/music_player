@@ -78,35 +78,19 @@ class BottomPlayerWidget extends StatefulWidget {
   _BottomPlayerWidgetState createState() => _BottomPlayerWidgetState();
 }
 
-class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController animationController;
-  late Animation<double> animation;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    animationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
-    animation =
-        Tween<double>(begin: 0.0, end: 1.0).animate(animationController);
-  }
-
+class _BottomPlayerWidgetState extends State<BottomPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     final PlayerBloc _playerBloc = InheritedProvider.of(context)!.inheritedData;
     return Container(
       height: 100,
       width: MediaQuery.of(context).size.width,
-      child: StreamBuilder<MediaState>(
-        stream: _playerBloc.mediaStateStream,
+      child: StreamBuilder<MediaItem?>(
+        stream: _playerBloc.audioHandler.mediaItem,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (!snapshot.hasData || snapshot.data == null) {
             return Container();
           }
-          animationController.animateTo(
-              snapshot.hasData && snapshot.data!.playing ? 0.0 : 1.0);
           return InkWell(
             onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => PlayerOverview())),
@@ -135,9 +119,9 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                         width: 90,
                         color: Theme.of(context).canvasColor,
                         child: QueryArtworkWidget(
-                          id: snapshot.data!.mediaItem!.extras!["id"],
+                          id: snapshot.data!.extras!["id"],
                           type: ArtworkType.AUDIO,
-                          artwork: snapshot.data!.mediaItem!.album,
+                          artwork: snapshot.data!.album,
                           deviceSDK: _playerBloc.deviceModel!.sdk,
                           keepOldArtwork: true,
                           nullArtworkWidget: Icon(
@@ -150,16 +134,8 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                   ),
                   Positioned(
                       left: 25,
-                      child: SizedBox(
-                        height: 92,
-                        width: 92,
-                        child: CircularProgressIndicator(
-                          value: snapshot.data!.position.inMilliseconds /
-                              snapshot
-                                  .data!.mediaItem!.duration!.inMilliseconds,
-                          color: Theme.of(context).accentColor,
-                          backgroundColor: Theme.of(context).backgroundColor,
-                        ),
+                      child: CircularProgressSeeker(
+                        mediaItem: snapshot.data!,
                       )),
                   Positioned(
                       left: 130,
@@ -169,15 +145,15 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              snapshot.data!.mediaItem!.title,
+                              snapshot.data!.title,
                               maxLines: 2,
                               overflow: TextOverflow.clip,
                               style: TextStyle(fontSize: 18),
                             ),
                             Text(
-                              snapshot.data!.mediaItem!.artist! +
+                              snapshot.data!.artist! +
                                   " · " +
-                                  snapshot.data!.mediaItem!.album!,
+                                  snapshot.data!.album!,
                               style: TextStyle(
                                   color: Theme.of(context)
                                       .textTheme
@@ -188,20 +164,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
                           ])),
                   Positioned(
                     right: 35,
-                    child: CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Theme.of(context).accentColor,
-                        child: IconButton(
-                          onPressed: () => !snapshot.data!.playing
-                              ? _playerBloc.audioHandler.play()
-                              : _playerBloc.audioHandler.pause(),
-                          icon: AnimatedIcon(
-                            progress: animation,
-                            icon: AnimatedIcons.pause_play,
-                            color: Theme.of(context).backgroundColor,
-                          ),
-                          iconSize: 30,
-                        )),
+                    child: AnimatedPlayPauseButton(playerBloc: _playerBloc),
                   ),
                 ],
               ),
@@ -210,5 +173,86 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget>
         },
       ),
     );
+  }
+}
+
+class CircularProgressSeeker extends StatelessWidget {
+  const CircularProgressSeeker({
+    Key? key,
+    required MediaItem mediaItem,
+  })  : _mediaItem = mediaItem,
+        super(key: key);
+  final MediaItem _mediaItem;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Duration>(
+        stream: AudioService.position,
+        builder: (context, snapshot) {
+          return SizedBox(
+            height: 92,
+            width: 92,
+            child: CircularProgressIndicator(
+              value: snapshot.data!.inMilliseconds /
+                  _mediaItem.duration!.inMilliseconds,
+              color: Theme.of(context).accentColor,
+              backgroundColor: Theme.of(context).backgroundColor,
+            ),
+          );
+        });
+  }
+}
+
+class AnimatedPlayPauseButton extends StatefulWidget {
+  const AnimatedPlayPauseButton({
+    Key? key,
+    required PlayerBloc playerBloc,
+  })  : _playerBloc = playerBloc,
+        super(key: key);
+
+  final PlayerBloc _playerBloc;
+
+  @override
+  _AnimatedPlayPauseButtonState createState() =>
+      _AnimatedPlayPauseButtonState();
+}
+
+class _AnimatedPlayPauseButtonState extends State<AnimatedPlayPauseButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController animationController;
+  late Animation<double> animation;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    animation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(animationController);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<bool>(
+        stream: widget._playerBloc.playingStream,
+        builder: (context, snapshot) {
+          animationController
+              .animateTo(snapshot.hasData && snapshot.data! ? 0.0 : 1.0);
+          return CircleAvatar(
+              radius: 30,
+              backgroundColor: Theme.of(context).accentColor,
+              child: IconButton(
+                onPressed: () => !snapshot.data!
+                    ? widget._playerBloc.audioHandler.play()
+                    : widget._playerBloc.audioHandler.pause(),
+                icon: AnimatedIcon(
+                  progress: animation,
+                  icon: AnimatedIcons.pause_play,
+                  color: Theme.of(context).backgroundColor,
+                ),
+                iconSize: 30,
+              ));
+        });
   }
 }

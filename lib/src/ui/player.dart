@@ -111,15 +111,17 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                         StreamBuilder<Duration>(
                             stream: AudioService.position,
                             builder: (context, position) {
-                              if (!position.hasData) {
-                                return CircularProgressIndicator();
-                              }
                               return Container(
                                 child: SeekBar(
-                                  duration: mediaState.data!.duration!,
-                                  position: position.data!,
-                                  onChangeEnd: (value) =>
-                                      _playerBloc.audioHandler.seek(value),
+                                  duration: !position.hasData
+                                      ? Duration(seconds: 0)
+                                      : mediaState.data!.duration!,
+                                  position: !position.hasData
+                                      ? Duration(seconds: 0)
+                                      : position.data!,
+                                  onChangeEnd: (value) => !position.hasData
+                                      ? print("empty player")
+                                      : _playerBloc.audioHandler.seek(value),
                                 ),
                               );
                             }),

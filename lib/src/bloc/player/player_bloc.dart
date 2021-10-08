@@ -1,4 +1,3 @@
-import 'dart:ffi';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -34,6 +33,13 @@ class SongAlbumStream {
   SongAlbumStream(this.songs, this.albums);
 }
 
+class ModelQueueStream {
+  final List<SongModel> inbetweenqueue;
+  final List<SongModel> playlist;
+
+  ModelQueueStream(this.inbetweenqueue, this.playlist);
+}
+
 class PlayerBloc {
   DeviceModel? deviceModel;
   late AudioHandler _audioHandler;
@@ -47,9 +53,12 @@ class PlayerBloc {
   late BehaviorSubject<List<PlaylistModel>> _playlistsSearch$;
   late BehaviorSubject<List<ArtistModel>> _artistsSearch$;
   late BehaviorSubject<List<SongModel>> _playlist$;
+  late BehaviorSubject<List<SongModel>> _queue$;
+  late BehaviorSubject<List<SongModel>> _inbetweenqueue$;
 
   BehaviorSubject<List<SongModel>> get songs$ => _songs$;
   BehaviorSubject<List<SongModel>> get playlist$ => _playlist$;
+  BehaviorSubject<List<SongModel>> get inbetweenqueue$ => _inbetweenqueue$;
   BehaviorSubject<List<AlbumModel>> get albums$ => _albums$;
   BehaviorSubject<List<ArtistModel>> get artists$ => _artists$;
   BehaviorSubject<List<PlaylistModel>> get playlists$ => _playlists$;
@@ -135,6 +144,12 @@ class PlayerBloc {
         .toList());
   }
 
+  Stream<ModelQueueStream> get modelQueueStram =>
+      Rx.combineLatest2<List<SongModel>, List<SongModel>, ModelQueueStream>(
+          _inbetweenqueue$.stream,
+          _playlist$.stream,
+          (a, b) => ModelQueueStream(a, b));
+
   Stream<SongAlbumStream> get songAlbumStream =>
       Rx.combineLatest2<List<SongModel>, List<AlbumModel>, SongAlbumStream>(
           _songs$.stream, _albums$.stream, (a, b) => SongAlbumStream(a, b));
@@ -153,9 +168,10 @@ class PlayerBloc {
   /// media item within that queue.
   Stream<QueueState> get queueStateStream =>
       Rx.combineLatest2<List<MediaItem>?, MediaItem?, QueueState>(
-          _audioHandler.queue,
-          _audioHandler.mediaItem,
-          (queue, mediaItem) => QueueState(queue, mediaItem));
+              _audioHandler.queue,
+              _audioHandler.mediaItem,
+              (queue, mediaItem) => QueueState(queue, mediaItem))
+          .asBroadcastStream();
 
   Stream<bool> get playingStream =>
       audioHandler.playbackState.map((s) => s.playing);
@@ -172,36 +188,53 @@ class PlayerBloc {
     _albumsSearch$ = BehaviorSubject();
     _artistsSearch$ = BehaviorSubject();
     _playlistsSearch$ = BehaviorSubject();
+    _inbetweenqueue$ = BehaviorSubject();
+    _queue$ = BehaviorSubject();
+
     fetchMusicInformation();
     OnAudioQuery().queryDeviceInfo().then((value) => deviceModel = value);
-    this._audioHandler.queue.listen((event) {
+    this.audioHandler.queue.listen((event) {
       updatePlaylist();
     });
-    this._audioHandler.mediaItem.listen((event) {
+    this.audioHandler.mediaItem.listen((event) {
       updatePlaylist();
+    });
+    this.audioHandler.queue.listen((value) {
+      print("--- Playlist ---");
+      print(value);
     });
   }
 
   updatePlaylist() {
-    List<SongModel> queue = [];
-    List<SongModel> playlist = _songs$.value;
-    this
-        ._audioHandler
-        .queue
-        .value
-        .skipWhile((value) => value == this._audioHandler.mediaItem.value)
-        .forEach((element) {
-      playlist.forEach((element2) {
-        if (element.id == element2.uri) {
-          queue.add(element2);
-        }
-      });
-    });
-    _playlist$.add(queue);
+    int songIndex = inbetweenqueue$.value.indexWhere((element) =>
+        element.id == this._audioHandler.mediaItem.value!.extras!['id']);
+    if (songIndex == -1) {
+      print("not in inbetweenque");
+    } else {
+      inbetweenqueue$.add(inbetweenqueue$.value..removeAt(songIndex));
+    }
+    print(songs$.hasValue);
+
+    List<SongModel> songs = [];
+    for (MediaItem i in _audioHandler.queue.value.skip(
+        _audioHandler.queue.value.indexOf(this._audioHandler.mediaItem.value!) +
+            1 +
+            _inbetweenqueue$.value.length)) {
+      songs.add(
+          _songs$.value.firstWhere((element) => element.id == i.extras!['id']));
+    }
+
+    _playlist$.add(songs);
+
+    /*_queue$.add(_songs$.value
+        .where((element) => _audioHandler.queue.value
+            .any((element2) => element.id == element2.extras!['id']))
+        .toList());*/
   }
 
   void startPlayback(List<SongModel> playlist) async {
     int sdk = deviceModel!.version;
+    inbetweenqueue$.add([]);
     await _audioHandler.updateQueue(playlist
         .map((e) => MediaItem(
             id: e.uri!,
@@ -213,7 +246,6 @@ class PlayerBloc {
             extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
             duration: Duration(milliseconds: e.duration!)))
         .toList());
-    _playlist$.add(playlist.sublist(1));
   }
 
   addToFavorits(int id) {
@@ -240,11 +272,21 @@ class PlayerBloc {
   }
 
   removeQueueItem(String uri) {
+    int songIndex =
+        _inbetweenqueue$.value.indexWhere((element) => element.uri == uri);
+    if (songIndex == -1) {
+      print("Error Song not in Queue");
+    } else {
+      _inbetweenqueue$.add(_inbetweenqueue$.value..removeAt(songIndex));
+    }
     _audioHandler.removeQueueItem(
         _audioHandler.queue.value.firstWhere((element) => element.id == uri));
   }
 
   addItemToQuoue(SongModel song) {
+    print("Add to queue");
+    print(song);
+    _inbetweenqueue$.add(_inbetweenqueue$.value..add(song));
     _audioHandler.insertQueueItem(
         _audioHandler.queue.value.indexOf(this._audioHandler.mediaItem.value!),
         MediaItem(

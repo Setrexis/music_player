@@ -2,9 +2,7 @@ import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/InheritedProvider.dart';
-import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:music_player/src/ui/wiedergabeListTab.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
@@ -16,11 +14,6 @@ class PlayerOverview extends StatefulWidget {
 }
 
 class _PlayerOverviewState extends State<PlayerOverview> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +145,6 @@ class _PlayControllsState extends State<PlayControlls>
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
@@ -268,11 +260,6 @@ class FutherActions extends StatefulWidget {
 }
 
 class _FutherActionsState extends State<FutherActions> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

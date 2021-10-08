@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
@@ -22,11 +20,9 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
   TextEditingController _searchQueryController = TextEditingController();
-  bool _isSearching = false;
   String searchQuery = "";
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
   }
 
@@ -44,19 +40,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSearchField() {
-    return TextField(
-      controller: _searchQueryController,
-      autofocus: true,
-      decoration: InputDecoration(
-        hintText: "Search ...",
-        border: InputBorder.none,
-      ),
-      style: TextStyle(fontSize: 16.0),
-      onChanged: (query) => updateSearchQuery(query),
     );
   }
 
@@ -106,11 +89,6 @@ class SearchBarWidget extends StatefulWidget {
 }
 
 class _SearchBarWidgetState extends State<SearchBarWidget> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

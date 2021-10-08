@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/player.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
@@ -193,8 +192,10 @@ class CircularProgressSeeker extends StatelessWidget {
             height: 92,
             width: 92,
             child: CircularProgressIndicator(
-              value: snapshot.data!.inMilliseconds /
-                  _mediaItem.duration!.inMilliseconds,
+              value: !snapshot.hasData || _mediaItem.duration == null
+                  ? 0
+                  : snapshot.data!.inMilliseconds /
+                      _mediaItem.duration!.inMilliseconds,
               color: Theme.of(context).accentColor,
               backgroundColor: Theme.of(context).backgroundColor,
             ),
@@ -224,7 +225,6 @@ class _AnimatedPlayPauseButtonState extends State<AnimatedPlayPauseButton>
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));

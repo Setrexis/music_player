@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/ui/playerWidget.dart';

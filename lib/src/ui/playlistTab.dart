@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
@@ -22,14 +21,7 @@ class PlaylistOverview extends StatefulWidget {
 
 class _PlaylistOverviewState extends State<PlaylistOverview>
     with TickerProviderStateMixin {
-  late PlayerBloc _playerBloc;
   List<SongModel> songs = [];
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   void playSong(SongModel song, PlayerBloc playerBloc) {
     if (songs == []) {

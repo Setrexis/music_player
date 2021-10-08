@@ -17,6 +17,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 version: 1.0.0+1
 
+module:
+    androidX: true
+
 environment:
   sdk: '>=2.12.0 <3.0.0'
 
@@ -28,27 +31,27 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.3
-
-  just_audio: ^0.8.0
-  dependencies:
-  audio_service:
+  just_audio: 
+    git:
+      url: https://github.com/Setrexis/just_audio
+      ref: master
+      path: just_audio
+  audio_service: 
     git: 
-      url: https://github.com/Setrexis/audio_service.git
-      ref: one-isolate
+      url: https://github.com/Setrexis/audio_service
       path: audio_service
+      ref: master
+      commit: 558eebbd56f6fafe0a08d7f46c6acaf26bbf101d
   path_provider: ^2.0.2
   google_fonts: ^2.1.0
   collection: ^1.15.0
-  xml: ^5.1.2
-  http: ^0.13.3
-  flutter_bloc: ^7.0.1
   equatable: ^2.0.3
   shared_preferences: ^2.0.6
-  palette_generator: ^0.3.0
   on_audio_query:
     git:
       https://github.com/Setrexis/on_audio_query
   share_plus: ^2.1.4
+  rxdart: ^0.27.2
 
 dev_dependencies:
   flutter_test:

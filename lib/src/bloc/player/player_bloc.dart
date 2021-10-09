@@ -1,4 +1,3 @@
-
 import 'package:audio_service/audio_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:rxdart/rxdart.dart';
@@ -72,7 +71,8 @@ class PlayerBloc {
 
   Future<void> fetchMusicInformation() async {
     if (!await OnAudioQuery().permissionsStatus()) {
-      await OnAudioQuery().permissionsRequest();
+      print("requesting permission");
+      print(await OnAudioQuery().permissionsRequest());
     }
     OnAudioQuery().queryArtists().then((value) => _artists$.add(value));
     OnAudioQuery().queryAlbums().then((value) => _albums$.add(value));

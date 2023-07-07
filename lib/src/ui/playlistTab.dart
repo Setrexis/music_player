@@ -169,7 +169,35 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                               ),
                                             )),
                                       )*/
-
+                                      /*Expanded(
+                                        child: Transform.translate(
+                                          offset: Offset(0, -30),
+                                          child: OverflowBox(
+                                              maxHeight: double.infinity,
+                                              alignment: Alignment.topCenter,
+                                              child: Container(
+                                                width: 70,
+                                                height: 70,
+                                                child: CircleAvatar(
+                                                  radius: 35,
+                                                  backgroundColor:
+                                                      Theme.of(context)
+                                                          .secondaryHeaderColor,
+                                                  child: Center(
+                                                    child: IconButton(
+                                                      onPressed: () =>
+                                                          print("object"),
+                                                      icon: Icon(
+                                                        Icons.play_arrow,
+                                                        color: Colors.white,
+                                                        size: 50,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              )),
+                                        ),
+                                      ),*/
                                       DecoratedBox(
                                         decoration: BoxDecoration(
                                             gradient: LinearGradient(colors: [

@@ -1,5 +1,4 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:collection/collection.dart';
 import 'package:music_player/AudioPlayer.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:rxdart/rxdart.dart';
@@ -127,6 +126,7 @@ class PlayerBloc {
   late BehaviorSubject<List<SongModel>> _playlist$;
   late BehaviorSubject<List<SongModel>> _queue$;
   late BehaviorSubject<List<SongModel>> _inbetweenqueue$;
+  late BehaviorSubject<List<dynamic>> _searchHistory$;
 
   BehaviorSubject<List<SongModel>> get songs$ => _songs$;
   BehaviorSubject<List<SongModel>> get playlist$ => _playlist$;
@@ -140,9 +140,11 @@ class PlayerBloc {
   BehaviorSubject<List<PlaylistModel>> get playlistsSearch$ =>
       _playlistsSearch$;
   BehaviorSubject<List<SongModel>> get favorits$ => _favorits$;
+  BehaviorSubject<List<dynamic>> get searchHistory$ => _searchHistory$;
   AudioPlayerHandler get audioHandler => _audioHandler;
 
   String search_term = "";
+  late final SharedPreferences prefs;
 
   Map<int, List<SongModel>> _playlistCache = {};
 
@@ -157,12 +159,12 @@ class PlayerBloc {
     OnAudioQuery().querySongs().then((value) async {
       _songs$.add(value);
       print(value.length);
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs = await SharedPreferences.getInstance();
       List<String> songIDs =
           prefs.getStringList("favorits")?.reversed.toList() ?? [];
       List<SongModel> favSongs = [];
-      value.forEach((element) {
-        songIDs.forEach((element2) {
+      songIDs.forEach((element2) {
+        value.forEach((element) {
           if (element.id.toString() == element2) {
             favSongs.add(element);
           }
@@ -172,9 +174,50 @@ class PlayerBloc {
     });
 
     favorits$.listen((value) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setStringList(
-          "favorits", favorits$.value.map((e) => e.id.toString()).toList());
+          "favorits", value.map((e) => e.id.toString()).toList());
+    });
+
+    searchHistory$.listen((value) {
+      prefs.setStringList(
+          "searchHistory",
+          value.take(30).map((e) {
+            if (e is SongModel) {
+              return "s" + e.id.toString();
+            } else if (e is AlbumModel) {
+              return "a" + e.id.toString();
+            } else if (e is ArtistModel) {
+              return "r" + e.id.toString();
+            } else if (e is PlaylistModel) {
+              return "p" + e.id.toString();
+            } else {
+              return "";
+            }
+          }).toList());
+    });
+
+    Timer(Duration(milliseconds: 1000), () {
+      List<dynamic> searchHistory = [];
+      prefs.getStringList("searchHistory")?.forEach((element) {
+        if (element.startsWith("s")) {
+          int id = int.parse(element.substring(1));
+          searchHistory
+              .add(_songs$.value.firstWhere((element) => element.id == id));
+        } else if (element.startsWith("a")) {
+          int id = int.parse(element.substring(1));
+          searchHistory
+              .add(_albums$.value.firstWhere((element) => element.id == id));
+        } else if (element.startsWith("r")) {
+          int id = int.parse(element.substring(1));
+          searchHistory
+              .add(_artists$.value.firstWhere((element) => element.id == id));
+        } else if (element.startsWith("p")) {
+          int id = int.parse(element.substring(1));
+          searchHistory
+              .add(_playlists$.value.firstWhere((element) => element.id == id));
+        }
+      });
+      _searchHistory$.add(searchHistory);
     });
   }
 
@@ -295,6 +338,7 @@ class PlayerBloc {
     _playlistsSearch$ = BehaviorSubject();
     _inbetweenqueue$ = BehaviorSubject();
     _queue$ = BehaviorSubject();
+    _searchHistory$ = BehaviorSubject();
 
     fetchMusicInformation();
     OnAudioQuery().queryDeviceInfo().then((value) => deviceModel = value);
@@ -308,6 +352,10 @@ class PlayerBloc {
       print("--- Playlist ---");
       print(value);
     });
+  }
+
+  void addToSearchHistory(dynamic element) {
+    _searchHistory$.add(_searchHistory$.value..insert(0, element));
   }
 
   updatePlaylist() {

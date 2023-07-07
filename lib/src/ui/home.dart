@@ -36,7 +36,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             HeadlineWidget(),
             SearchBarWidget(),
             RecentPlayedPlaylistWidget(),
-            FavroritSongsWidget(),
+            FavoriteSongsWidget(),
           ],
         ),
       ),
@@ -156,26 +156,30 @@ class CoustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    _playerBloc.search(query);
+    if (query != '') _playerBloc.search(query);
 
     return SearchResult(
       playerBloc: _playerBloc,
+      query: query,
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    _playerBloc.search(query);
+    if (query != '') _playerBloc.search(query);
 
     return SearchResult(
       playerBloc: _playerBloc,
+      query: query,
     );
   }
 }
 
 class SearchResult extends StatefulWidget {
   final PlayerBloc playerBloc;
-  const SearchResult({Key? key, required this.playerBloc}) : super(key: key);
+  final String query;
+  const SearchResult({Key? key, required this.playerBloc, required this.query})
+      : super(key: key);
 
   @override
   _SearchResultState createState() => _SearchResultState();
@@ -243,40 +247,105 @@ class _SearchResultState extends State<SearchResult> {
               },
             ),
           ]),
-          StreamBuilder<CombinedSearchStream>(
-            stream: widget.playerBloc.combinedSearchStreams(_isSelected),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data!.searchElements.isEmpty) {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: ClampingScrollPhysics(),
-                itemCount: snapshot.data!.searchElements.length,
-                itemBuilder: (context, index) {
-                  dynamic searchElement = snapshot.data!.searchElements[index];
-                  switch (searchElement.runtimeType) {
-                    case SongModel:
-                      return SongListItem(
-                          playerBloc: widget.playerBloc, song: searchElement);
-                    case AlbumModel:
-                      return AlbumListItem(album: searchElement);
-                    case ArtistModel:
-                      return ArtistListItem(artist: searchElement);
-                    case PlaylistModel:
-                      return PlaylistListItem(playlist: searchElement);
-                    default:
-                      return Container();
-                  }
-                },
-              );
-            },
-          ),
+          widget.query != ''
+              ? StreamBuilder<CombinedSearchStream>(
+                  stream: widget.playerBloc.combinedSearchStreams(_isSelected),
+                  builder: (context, snapshot) {
+                    return SearchResultList(
+                        playerBloc: widget.playerBloc,
+                        searchElements: snapshot.data?.searchElements);
+                  },
+                )
+              : StreamBuilder<List<dynamic>>(
+                  stream: widget.playerBloc.searchHistory$,
+                  builder: (context, snapshot) {
+                    return SearchResultList(
+                        playerBloc: widget.playerBloc,
+                        searchElements: snapshot.data);
+                  },
+                ),
         ],
       ),
+    );
+  }
+}
+
+class SearchResultList extends StatelessWidget {
+  const SearchResultList({
+    Key? key,
+    required this.searchElements,
+    required this.playerBloc,
+  }) : super(key: key);
+
+  final List<dynamic>? searchElements;
+  final PlayerBloc playerBloc;
+
+  @override
+  Widget build(BuildContext context) {
+    if (searchElements == null) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (searchElements!.isEmpty) {
+      return Center(
+        child: Text("No results found"),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: ClampingScrollPhysics(),
+      itemCount: searchElements!.length,
+      itemBuilder: (context, index) {
+        dynamic searchElement = searchElements![index];
+        switch (searchElement.runtimeType) {
+          case SongModel:
+            SongModel song = searchElement as SongModel;
+            return SongListItem(
+              playerBloc: playerBloc,
+              song: song,
+              onTap: (song, _playerBloc) {
+                List<SongModel> songs = [song];
+                _playerBloc.startPlayback(songs);
+                _playerBloc.addToSearchHistory(searchElement);
+              },
+            );
+          case AlbumModel:
+            return AlbumListItem(
+              album: searchElement,
+              onTap: (album) => {
+                Navigator.of(context).push(new MaterialPageRoute(
+                  builder: (context) => AlbumOverview(album: album),
+                )),
+                playerBloc.addToSearchHistory(searchElement),
+              },
+            );
+          case ArtistModel:
+            return ArtistListItem(
+              artist: searchElement,
+              onTap: (artist) {
+                Navigator.of(context).push(new MaterialPageRoute(
+                  builder: (context) => ArtistOverview(artist: artist),
+                ));
+                playerBloc.addToSearchHistory(searchElement);
+              },
+            );
+          case PlaylistModel:
+            return PlaylistListItem(
+              playlist: searchElement,
+              onTap: (playlist) {
+                Navigator.of(context).push(new MaterialPageRoute(
+                  builder: (context) => PlaylistOverview(playlist: playlist),
+                ));
+                playerBloc.addToSearchHistory(searchElement);
+              },
+            );
+          default:
+            return Container();
+        }
+      },
     );
   }
 }
@@ -466,14 +535,14 @@ class _PlaylistWidgetState extends State<PlaylistWidget> {
   }
 }
 
-class FavroritSongsWidget extends StatefulWidget {
-  const FavroritSongsWidget({Key? key}) : super(key: key);
+class FavoriteSongsWidget extends StatefulWidget {
+  const FavoriteSongsWidget({Key? key}) : super(key: key);
 
   @override
-  _FavroritSongWidgetState createState() => _FavroritSongWidgetState();
+  _FavoriteSongWidgetState createState() => _FavoriteSongWidgetState();
 }
 
-class _FavroritSongWidgetState extends State<FavroritSongsWidget> {
+class _FavoriteSongWidgetState extends State<FavoriteSongsWidget> {
   List<SongModel> songs = [];
 
   void playSong(SongModel song, PlayerBloc playerBloc) {
@@ -733,18 +802,22 @@ class ArtistListItem extends StatelessWidget {
   const ArtistListItem({
     Key? key,
     required this.artist,
+    this.onTap,
   }) : super(key: key);
 
   final ArtistModel artist;
+  final Function? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: InkWell(
-        onTap: () => Navigator.of(context).push(new MaterialPageRoute(
-          builder: (context) => ArtistOverview(artist: artist),
-        )),
+        onTap: () => onTap == null
+            ? Navigator.of(context).push(new MaterialPageRoute(
+                builder: (context) => ArtistOverview(artist: artist),
+              ))
+            : onTap!(artist),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -800,18 +873,22 @@ class AlbumListItem extends StatelessWidget {
   const AlbumListItem({
     Key? key,
     required this.album,
+    this.onTap,
   }) : super(key: key);
 
   final AlbumModel album;
+  final Function? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: InkWell(
-        onTap: () => Navigator.of(context).push(new MaterialPageRoute(
-          builder: (context) => AlbumOverview(album: album),
-        )),
+        onTap: () => onTap == null
+            ? Navigator.of(context).push(new MaterialPageRoute(
+                builder: (context) => AlbumOverview(album: album),
+              ))
+            : onTap!(album),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -867,18 +944,22 @@ class PlaylistListItem extends StatelessWidget {
   const PlaylistListItem({
     Key? key,
     required this.playlist,
+    this.onTap,
   }) : super(key: key);
 
   final PlaylistModel playlist;
+  final Function? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: InkWell(
-        onTap: () => Navigator.of(context).push(new MaterialPageRoute(
-          builder: (context) => PlaylistOverview(playlist: playlist),
-        )),
+        onTap: () => onTap == null
+            ? Navigator.of(context).push(new MaterialPageRoute(
+                builder: (context) => PlaylistOverview(playlist: playlist),
+              ))
+            : onTap!(playlist),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,

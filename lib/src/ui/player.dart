@@ -32,8 +32,8 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-              Theme.of(context).canvasColor,
-              Theme.of(context).backgroundColor
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surfaceVariant
             ])),
         padding: const EdgeInsets.only(top: 50),
         child: StreamBuilder<MediaItem?>(
@@ -53,7 +53,8 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                       artworkWidth: MediaQuery.of(context).size.width - 100,
                       artworkBorder: BorderRadius.circular(100000000),
                       nullArtworkWidget: CircleAvatar(
-                        backgroundColor: Theme.of(context).backgroundColor,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.onSurfaceVariant,
                         child: Icon(
                           Icons.music_note,
                           size: 60,
@@ -200,13 +201,13 @@ class _PlayControllsState extends State<PlayControlls>
               child: Container(
                 decoration: BoxDecoration(boxShadow: [
                   BoxShadow(
-                      color: Theme.of(context).primaryColorDark,
+                      color: Theme.of(context).colorScheme.secondary,
                       blurRadius: 50.0,
                       spreadRadius: 5.0)
                 ]),
                 child: CircleAvatar(
                   radius: 30,
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   child: StreamBuilder<bool>(
                       stream: _playerBloc.audioHandler.playbackState
                           .map((state) => state.playing)
@@ -221,7 +222,7 @@ class _PlayControllsState extends State<PlayControlls>
                           icon: AnimatedIcon(
                             progress: animation,
                             icon: AnimatedIcons.pause_play,
-                            color: Theme.of(context).backgroundColor,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                           iconSize: 30,
                         );
@@ -360,7 +361,7 @@ class _SeekBarState extends State<SeekBar> {
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 1.5,
-              inactiveTrackColor: Theme.of(context).canvasColor,
+              inactiveTrackColor: Theme.of(context).colorScheme.surface,
               activeTrackColor: Theme.of(context).colorScheme.secondary,
               thumbShape: SliderComponentShape.noThumb,
             ),

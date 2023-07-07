@@ -1,13 +1,5 @@
-import 'package:audio_service/audio_service.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:music_player/AudioPlayer.dart';
-import 'package:music_player/src/bloc/InheritedProvider.dart';
-import 'package:music_player/src/ui/home.dart';
-import 'package:music_player/src/bloc/player/player_bloc.dart';
-
-late AudioPlayerHandler _audioHandler;
 
 final _defaultLightColorScheme = ThemeData.light()
     .copyWith(
@@ -48,45 +40,3 @@ final _defaultDarkColorScheme = ThemeData.dark()
             iconTheme: IconThemeData().copyWith(color: Colors.white),
             actionsIconTheme: IconThemeData().copyWith(color: Colors.white)))
     .colorScheme;
-
-Future<void> main() async {
-  // store this in a singleton
-  _audioHandler = await AudioService.init(
-    builder: () => MyAudioHandler(),
-    config: AudioServiceConfig(
-        androidNotificationChannelId: 'com.ryanheise.myapp.channel.audio',
-        androidNotificationChannelName: 'Music Player',
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
-        androidShowNotificationBadge: true),
-  );
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return DynamicColorBuilder(
-      builder: (lightDynamic, darkDynamic) => InheritedProvider(
-        inheritedData: PlayerBloc(_audioHandler),
-        child: MaterialApp(
-          title: 'Flutter Demo',
-          theme: ThemeData(
-            //colorScheme: lightDynamic ?? _defaultLightColorScheme,
-            useMaterial3: true,
-            textTheme: GoogleFonts.mavenProTextTheme(),
-            colorSchemeSeed: Color.fromRGBO(223, 83, 3, 1),
-          ),
-          darkTheme: ThemeData(
-            colorScheme: darkDynamic ?? _defaultDarkColorScheme,
-            useMaterial3: true,
-            textTheme: GoogleFonts.mavenProTextTheme(
-                ThemeData(brightness: Brightness.dark).textTheme),
-          ),
-          home: Home(),
-        ),
-      ),
-    );
-  }
-}

@@ -28,20 +28,25 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.3
-  just_audio: ^0.9.12
-  audio_service: ^0.18.0
-  path_provider: ^2.0.2
-  google_fonts: ^2.1.0
+  just_audio: ^0.9.34
+  audio_service: 
+    git:
+      url: https://github.com/Setrexis/audio_service
+      ref: 326ad45a15bb81a70066b1d4000a851202977fef
+      path: audio_service
+  path_provider: ^2.0.15
+  google_fonts: ^5.1.0
   collection: ^1.15.0
   equatable: ^2.0.3
   shared_preferences: ^2.0.6
-  on_audio_query:
-    git:
-      https://github.com/Setrexis/on_audio_query
-  share_plus: ^3.0.1
-  rxdart: ^0.27.2
+  on_audio_query: ^2.9.0
+    #git:
+     # https://github.com/Setrexis/on_audio_query
+  share_plus: ^7.0.2
+  rxdart: ^0.27.7
   flutter_launcher_icons: "^0.9.2"
   flutter_native_splash: ^1.2.4
+  platform: ^3.1.0
 
 dev_dependencies:
   flutter_test:

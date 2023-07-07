@@ -17,11 +17,6 @@ class PlayerWidget extends StatefulWidget {
 }
 
 class _PlayerWidgetState extends State<PlayerWidget> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,8 +115,6 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget> {
                         child: QueryArtworkWidget(
                           id: snapshot.data!.extras!["id"],
                           type: ArtworkType.AUDIO,
-                          artwork: snapshot.data!.album,
-                          deviceSDK: _playerBloc.deviceModel!.sdk,
                           keepOldArtwork: true,
                           nullArtworkWidget: Icon(
                             Icons.music_note,
@@ -196,7 +189,7 @@ class CircularProgressSeeker extends StatelessWidget {
                   ? 0
                   : snapshot.data!.inMilliseconds /
                       _mediaItem.duration!.inMilliseconds,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               backgroundColor: Theme.of(context).backgroundColor,
             ),
           );
@@ -241,7 +234,7 @@ class _AnimatedPlayPauseButtonState extends State<AnimatedPlayPauseButton>
               .animateTo(snapshot.hasData && snapshot.data! ? 0.0 : 1.0);
           return CircleAvatar(
               radius: 30,
-              backgroundColor: Theme.of(context).accentColor,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
               child: IconButton(
                 onPressed: () => !snapshot.data!
                     ? widget._playerBloc.audioHandler.play()

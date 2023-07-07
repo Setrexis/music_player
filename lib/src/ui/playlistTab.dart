@@ -47,20 +47,11 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
           ],
         ),
         body: PlayerWidget(
-            child: StreamBuilder<List<SongModel>>(
-                stream: _playerBloc.songs$.stream,
+            child: FutureBuilder<List<SongModel>>(
+                future: _playerBloc.getPlaylistSongs(widget.playlist.id),
                 builder: (context, snapshot) {
-                  songs = [];
+                  songs = snapshot.data ?? [];
 
-                  if (snapshot.hasData) {
-                    snapshot.data!.forEach((element) {
-                      widget.playlist.memberIDs.forEach((element2) {
-                        if (element.id == int.tryParse(element2.toString())) {
-                          songs.add(element);
-                        }
-                      });
-                    });
-                  }
                   return CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(
@@ -81,17 +72,17 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                     artworkBorder: BorderRadius.circular(10),
                                     artworkHeight: 180,
                                     artworkWidth: 180,
-                                    id: widget.coverSong!.id,
-                                    type: ArtworkType.AUDIO,
+                                    id: widget.coverSong!.albumId ?? -1,
+                                    type: ArtworkType.ALBUM,
                                     keepOldArtwork: true,
                                   ),
                                 ),
                                 Padding(
                                   padding:
-                                      const EdgeInsets.fromLTRB(15, 0, 30, 0),
+                                      const EdgeInsets.fromLTRB(15, 0, 0, 0),
                                   child: Container(
                                     width:
-                                        MediaQuery.of(context).size.width - 265,
+                                        MediaQuery.of(context).size.width - 235,
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -109,7 +100,7 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                         Padding(
                                             padding: EdgeInsets.only(top: 8)),
                                         Text(
-                                          widget.playlist.memberIDs.length
+                                          widget.playlist.numOfSongs
                                                   .toString() +
                                               " Songs",
                                           style: TextStyle(
@@ -144,8 +135,7 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        widget.playlist.memberIDs.length
-                                                .toString() +
+                                        widget.playlist.numOfSongs.toString() +
                                             " Songs",
                                         style: TextStyle(
                                             color: Theme.of(context)
@@ -154,10 +144,38 @@ class _PlaylistOverviewState extends State<PlaylistOverview>
                                                 .color!
                                                 .withAlpha(122)),
                                       ),
+                                      /*Container(
+                                        width: 60,
+                                        height: 60,
+                                        child: OverflowBox(
+                                            maxWidth: 100,
+                                            maxHeight: 100,
+                                            child: Container(
+                                              width: 100,
+                                              height: 100,
+                                              child: CircleAvatar(
+                                                radius: 25,
+                                                backgroundColor:
+                                                    Theme.of(context)
+                                                        .primaryColor,
+                                                child: IconButton(
+                                                  onPressed: () =>
+                                                      print("object"),
+                                                  icon: Icon(
+                                                    Icons.play_arrow,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            )),
+                                      )*/
+
                                       DecoratedBox(
                                         decoration: BoxDecoration(
                                             gradient: LinearGradient(colors: [
-                                              Theme.of(context).accentColor,
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary,
                                               Theme.of(context)
                                                   .primaryColorLight
                                             ]),

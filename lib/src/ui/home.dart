@@ -68,6 +68,7 @@ class HeadlineWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
               ),
             ),
             IconButton(
@@ -89,7 +90,6 @@ class SearchBarWidget extends StatefulWidget {
 }
 
 class _SearchBarWidgetState extends State<SearchBarWidget> {
-
   @override
   Widget build(BuildContext context) {
     final _playerBloc = InheritedProvider.of(context)!.inheritedData;
@@ -182,7 +182,7 @@ class SearchResult extends StatefulWidget {
 }
 
 class _SearchResultState extends State<SearchResult> {
-  int? _value;
+  List<bool> _isSelected = [false, false, false, false];
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -191,122 +191,87 @@ class _SearchResultState extends State<SearchResult> {
         children: [
           Wrap(spacing: 8, children: [
             ChoiceChip(
-              selectedColor: Theme.of(context).accentColor,
+              selectedColor: Theme.of(context).colorScheme.secondary,
               labelStyle: TextStyle(
                   color: MaterialStateProperty.resolveAs(Colors.white,
                       [MaterialState.selected, MaterialState.pressed].toSet())),
               label: Text('Songs'),
-              selected: _value == 1,
+              selected: _isSelected[0],
               onSelected: (bool selected) {
                 setState(() {
-                  _value = selected ? 1 : null;
+                  _isSelected[0] = selected;
                 });
               },
             ),
             ChoiceChip(
               label: Text('Albums'),
-              selectedColor: Theme.of(context).accentColor,
+              selectedColor: Theme.of(context).colorScheme.secondary,
               labelStyle: TextStyle(
                   color: MaterialStateProperty.resolveAs(Colors.white,
                       [MaterialState.selected, MaterialState.pressed].toSet())),
-              selected: _value == 2,
+              selected: _isSelected[1],
               onSelected: (bool selected) {
                 setState(() {
-                  _value = selected ? 2 : null;
+                  _isSelected[1] = selected;
                 });
               },
             ),
             ChoiceChip(
               label: Text('Artists'),
-              selectedColor: Theme.of(context).accentColor,
+              selectedColor: Theme.of(context).colorScheme.secondary,
               labelStyle: TextStyle(
                   color: MaterialStateProperty.resolveAs(Colors.white,
                       [MaterialState.selected, MaterialState.pressed].toSet())),
-              selected: _value == 3,
+              selected: _isSelected[2],
               onSelected: (bool selected) {
                 setState(() {
-                  _value = selected ? 3 : null;
+                  _isSelected[2] = selected;
                 });
               },
             ),
             ChoiceChip(
               label: Text('Playlists'),
-              selectedColor: Theme.of(context).accentColor,
+              selectedColor: Theme.of(context).colorScheme.secondary,
               labelStyle: TextStyle(
                   color: MaterialStateProperty.resolveAs(Colors.white,
                       [MaterialState.selected, MaterialState.pressed].toSet())),
-              selected: _value == 4,
+              selected: _isSelected[3],
               onSelected: (bool selected) {
                 setState(() {
-                  _value = selected ? 4 : null;
+                  _isSelected[3] = selected;
                 });
               },
             ),
           ]),
-          StreamBuilder<List>(
-            stream: widget.playerBloc.songsSearch$,
+          StreamBuilder<CombinedSearchStream>(
+            stream: widget.playerBloc.combinedSearchStreams(_isSelected),
             builder: (context, snapshot) {
-              if (!snapshot.hasData ||
-                  snapshot.data!.isEmpty ||
-                  (_value != null && _value! != 1)) {
-                return Container();
+              if (!snapshot.hasData || snapshot.data!.searchElements.isEmpty) {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
               }
-              return ExpandableListView(
-                itemBuilder: (context, index) => SongListItem(
-                    playerBloc: widget.playerBloc, song: snapshot.data![index]),
-                separatorBuilder: (context, index) => SizedBox(height: 5),
-                itemCount: snapshot.data!.length,
-                name: "Songs",
-              );
-            },
-          ),
-          StreamBuilder<List>(
-            stream: widget.playerBloc.albumsSearch$,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData ||
-                  snapshot.data!.isEmpty ||
-                  (_value != null && _value! != 2)) {
-                return Container();
-              }
-              return ExpandableListView(
-                  itemBuilder: (context, index) =>
-                      AlbumListItem(album: snapshot.data![index]),
-                  separatorBuilder: (context, index) => SizedBox(height: 5),
-                  itemCount: snapshot.data!.length,
-                  name: "Albums");
-            },
-          ),
-          StreamBuilder<List>(
-            stream: widget.playerBloc.artistsSearch$,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData ||
-                  snapshot.data!.isEmpty ||
-                  (_value != null && _value! != 3)) {
-                return Container();
-              }
-              return ExpandableListView(
-                itemBuilder: (context, index) =>
-                    ArtistListItem(artist: snapshot.data![index]),
-                separatorBuilder: (context, index) => SizedBox(height: 5),
-                itemCount: snapshot.data!.length,
-                name: "Artists",
-              );
-            },
-          ),
-          StreamBuilder<List>(
-            stream: widget.playerBloc.playlistsSearch$,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData ||
-                  snapshot.data!.isEmpty ||
-                  (_value != null && _value! != 4)) {
-                return Container();
-              }
-              return ExpandableListView(
-                itemBuilder: (context, index) =>
-                    PlaylistListItem(playlist: snapshot.data![index]),
-                separatorBuilder: (context, index) => SizedBox(height: 5),
-                itemCount: snapshot.data!.length,
-                name: "Playlists",
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: ClampingScrollPhysics(),
+                itemCount: snapshot.data!.searchElements.length,
+                itemBuilder: (context, index) {
+                  dynamic searchElement = snapshot.data!.searchElements[index];
+                  switch (searchElement.runtimeType) {
+                    case SongModel:
+                      return SongListItem(
+                          playerBloc: widget.playerBloc, song: searchElement);
+                    case AlbumModel:
+                      return AlbumListItem(album: searchElement);
+                    case ArtistModel:
+                      return ArtistListItem(artist: searchElement);
+                    case PlaylistModel:
+                      return PlaylistListItem(playlist: searchElement);
+                    default:
+                      return Container();
+                  }
+                },
               );
             },
           ),
@@ -410,22 +375,20 @@ class _RecentPlayedPlaylistWidgetState
                     }
                     return Container(
                       padding: EdgeInsets.only(left: 30),
-                      child: Expanded(
-                        child: ListView.separated(
-                          separatorBuilder: (context, index) => SizedBox(
-                            width: 10,
-                          ),
-                          shrinkWrap: true,
-                          primary: false,
-                          physics: ClampingScrollPhysics(),
-                          scrollDirection: Axis.horizontal,
-                          itemBuilder: (context, index) => Container(
-                            child: PlaylistWidget(snapshot.data![index]),
-                            height: 250,
-                            width: 220,
-                          ),
-                          itemCount: snapshot.data!.length,
+                      child: ListView.separated(
+                        separatorBuilder: (context, index) => SizedBox(
+                          width: 10,
                         ),
+                        shrinkWrap: true,
+                        primary: false,
+                        physics: ClampingScrollPhysics(),
+                        scrollDirection: Axis.horizontal,
+                        itemBuilder: (context, index) => Container(
+                          child: PlaylistWidget(snapshot.data![index]),
+                          height: 250,
+                          width: 220,
+                        ),
+                        itemCount: snapshot.data!.length,
                       ),
                     );
                   }),
@@ -463,15 +426,14 @@ class _PlaylistWidgetState extends State<PlaylistWidget> {
             Container(
               height: 220,
               width: 220,
-              child: StreamBuilder<List<SongModel>>(
-                  stream: _playerBloc.songs$.stream,
+              child: FutureBuilder<List<SongModel>>(
+                  future: _playerBloc.getPlaylistSongs(widget.playlist.id),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData ||
-                        widget.playlist.memberIDs.isEmpty) {
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return Container(
                         child: Icon(
                           Icons.music_note,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(25),
@@ -479,13 +441,12 @@ class _PlaylistWidgetState extends State<PlaylistWidget> {
                       );
                     }
 
-                    firstPlaylistSong = snapshot.data!.firstWhere((element) =>
-                        element.id.toString() ==
-                        widget.playlist.memberIDs[0].toString());
+                    firstPlaylistSong = snapshot.data!.last;
+                    print(firstPlaylistSong);
 
                     return QueryArtworkWidget(
-                      id: firstPlaylistSong!.id,
-                      type: ArtworkType.AUDIO,
+                      id: firstPlaylistSong!.albumId ?? -1,
+                      type: ArtworkType.ALBUM,
                       keepOldArtwork: true,
                       nullArtworkWidget: Icon(Icons.music_note),
                     );
@@ -498,7 +459,7 @@ class _PlaylistWidgetState extends State<PlaylistWidget> {
               ),
             ),
             Text(
-              widget.playlist.memberIDs.length.toString() + " Songs",
+              widget.playlist.numOfSongs.toString() + " Songs",
             )
           ]),
     );
@@ -546,6 +507,23 @@ class _FavroritSongWidgetState extends State<FavroritSongsWidget> {
                     return CircularProgressIndicator();
                   }
                   songs = snapshot.data!;
+                  if (songs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        children: [
+                          IconButton(
+                              onPressed: () => print("add songs"),
+                              icon: Icon(
+                                Icons.favorite,
+                                size: 50,
+                                color: Theme.of(context).colorScheme.primary,
+                              )),
+                          Padding(padding: const EdgeInsets.all(20)),
+                          Text("Tap the heart to add songs to your favorites"),
+                        ],
+                      ),
+                    );
+                  }
                   return Column(
                     children: new List.generate(
                         snapshot.data!.length,
@@ -601,9 +579,16 @@ class SongListItem extends StatelessWidget {
                   artworkBorder: BorderRadius.circular(20),
                   keepOldArtwork: true,
                   size: 150,
-                  nullArtworkWidget: Icon(
-                    Icons.music_note,
-                    size: 50,
+                  nullArtworkWidget: QueryArtworkWidget(
+                    id: song.albumId ?? -1,
+                    type: ArtworkType.ALBUM,
+                    artworkBorder: BorderRadius.circular(20),
+                    keepOldArtwork: true,
+                    size: 150,
+                    nullArtworkWidget: Icon(
+                      Icons.music_note,
+                      size: 50,
+                    ),
                   ),
                 ),
                 Padding(
@@ -692,7 +677,7 @@ class SongListItem extends StatelessWidget {
                           Navigator.of(context).push(new MaterialPageRoute(
                             builder: (context) => AlbumOverview(
                               album: _playerBloc.albums$.value.firstWhere(
-                                  (element) => element.albumId == song.albumId),
+                                  (element) => element.id == song.albumId),
                             ),
                           ));
                           break;
@@ -722,18 +707,16 @@ class SongListItem extends StatelessWidget {
                         child: Text("Add to queue"),
                         value: SongOptions.addToQueue,
                       ),
-                      album
-                          ? const PopupMenuItem(
-                              child: Text("Album"),
-                              value: SongOptions.album,
-                            )
-                          : PopupMenuItem(child: Container()),
-                      artist
-                          ? const PopupMenuItem(
-                              child: Text("Artist"),
-                              value: SongOptions.artist,
-                            )
-                          : PopupMenuItem(child: Container()),
+                      if (album)
+                        const PopupMenuItem(
+                          child: Text("Album"),
+                          value: SongOptions.album,
+                        ),
+                      if (artist)
+                        const PopupMenuItem(
+                          child: Text("Artist"),
+                          value: SongOptions.artist,
+                        ),
                     ],
                   )
                 : left!,
@@ -924,7 +907,7 @@ class PlaylistListItem extends StatelessWidget {
                           style: TextStyle(fontSize: 16),
                         ),
                         Text(
-                          playlist.memberIDs.length.toString() + " Songs",
+                          playlist.numOfSongs.toString() + " Songs",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -961,29 +944,27 @@ class SongListWidget extends StatelessWidget {
       shrinkWrap: true,
       itemCount: songList.length,
       itemBuilder: (context, index) => ListTile(
-        leading: (songList[index].artwork == null)
-            ? FutureBuilder<Uint8List?>(
-                future: OnAudioQuery()
-                    .queryArtwork(songList[index].id, ArtworkType.ALBUM),
-                builder: (_, snapshot) {
-                  if (snapshot.data == null || !snapshot.hasData)
-                    return Center(
-                      child: CircularProgressIndicator(),
-                    );
+        leading: FutureBuilder<Uint8List?>(
+            future: OnAudioQuery()
+                .queryArtwork(songList[index].id, ArtworkType.ALBUM),
+            builder: (_, snapshot) {
+              if (snapshot.data == null || !snapshot.hasData)
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
 
-                  if (snapshot.data!.isEmpty) {
-                    return Icon(Icons.music_note);
-                  }
+              if (snapshot.data!.isEmpty) {
+                return Icon(Icons.music_note);
+              }
 
-                  return Container(
-                    height: 80,
-                    width: 80,
-                    child: Image.memory(
-                      snapshot.data!,
-                    ),
-                  );
-                })
-            : Image.memory(songList[index].artwork!),
+              return Container(
+                height: 80,
+                width: 80,
+                child: Image.memory(
+                  snapshot.data!,
+                ),
+              );
+            }),
         title: Text(songList[index].title),
         subtitle: Text(songList[index].artist!),
       ),

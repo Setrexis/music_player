@@ -1,4 +1,6 @@
 import 'package:audio_service/audio_service.dart';
+import 'package:collection/collection.dart';
+import 'package:music_player/AudioPlayer.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -39,9 +41,80 @@ class ModelQueueStream {
   ModelQueueStream(this.inbetweenqueue, this.playlist);
 }
 
+class CombinedSearchStream {
+  late final List<dynamic> searchElements;
+
+  CombinedSearchStream(
+      songs, albums, artists, playlists, String search, List<bool> searchIn) {
+    search = search.toLowerCase();
+    searchElements = [];
+
+    if (searchIn.any((element) => element)) {
+      if (searchIn[0]) searchElements.addAll(songs);
+      if (searchIn[1]) searchElements.addAll(albums);
+      if (searchIn[2]) searchElements.addAll(artists);
+      if (searchIn[3]) searchElements.addAll(playlists);
+    } else {
+      searchElements.addAll(songs);
+      searchElements.addAll(albums);
+      searchElements.addAll(artists);
+      searchElements.addAll(playlists);
+    }
+
+    searchElements.sort((a, b) {
+      int start_index_a;
+      int start_index_b;
+      switch (a.runtimeType) {
+        case SongModel:
+          start_index_a = (a as SongModel).title.toLowerCase().indexOf(search);
+          break;
+        case AlbumModel:
+          start_index_a = (a as AlbumModel).album.toLowerCase().indexOf(search);
+          break;
+        case ArtistModel:
+          start_index_a =
+              (a as ArtistModel).artist.toLowerCase().indexOf(search);
+          break;
+        case PlaylistModel:
+          start_index_a =
+              (a as PlaylistModel).playlist.toLowerCase().indexOf(search);
+          break;
+        default:
+          start_index_a = -1;
+      }
+      switch (b.runtimeType) {
+        case SongModel:
+          start_index_b = (b as SongModel).title.toLowerCase().indexOf(search);
+          break;
+        case AlbumModel:
+          start_index_b = (b as AlbumModel).album.toLowerCase().indexOf(search);
+          break;
+        case ArtistModel:
+          start_index_b =
+              (b as ArtistModel).artist.toLowerCase().indexOf(search);
+          break;
+        case PlaylistModel:
+          start_index_b =
+              (b as PlaylistModel).playlist.toLowerCase().indexOf(search);
+          break;
+        default:
+          start_index_b = -1;
+      }
+
+      return a == b
+          ? 0
+          : start_index_a == -1
+              ? 1
+              : start_index_b == -1
+                  ? -1
+                  : start_index_a - start_index_b;
+    });
+  }
+}
+
 class PlayerBloc {
   DeviceModel? deviceModel;
-  late AudioHandler _audioHandler;
+  late AudioPlayerHandler _audioHandler;
   late BehaviorSubject<List<SongModel>> _songs$;
   late BehaviorSubject<List<AlbumModel>> _albums$;
   late BehaviorSubject<List<PlaylistModel>> _playlists$;
@@ -67,7 +140,11 @@ class PlayerBloc {
   BehaviorSubject<List<PlaylistModel>> get playlistsSearch$ =>
       _playlistsSearch$;
   BehaviorSubject<List<SongModel>> get favorits$ => _favorits$;
-  AudioHandler get audioHandler => _audioHandler;
+  AudioPlayerHandler get audioHandler => _audioHandler;
+
+  String search_term = "";
+
+  Map<int, List<SongModel>> _playlistCache = {};
 
   Future<void> fetchMusicInformation() async {
     if (!await OnAudioQuery().permissionsStatus()) {
@@ -81,17 +158,16 @@ class PlayerBloc {
       _songs$.add(value);
       print(value.length);
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      List<String>? songIDs = prefs.getStringList("favorits");
+      List<String> songIDs =
+          prefs.getStringList("favorits")?.reversed.toList() ?? [];
       List<SongModel> favSongs = [];
-      if (songIDs != null) {
-        value.forEach((element) {
-          songIDs.forEach((element2) {
-            if (element.id.toString() == element2) {
-              favSongs.add(element);
-            }
-          });
+      value.forEach((element) {
+        songIDs.forEach((element2) {
+          if (element.id.toString() == element2) {
+            favSongs.add(element);
+          }
         });
-      }
+      });
       _favorits$.add(favSongs);
     });
 
@@ -102,7 +178,19 @@ class PlayerBloc {
     });
   }
 
+  Stream<CombinedSearchStream> combinedSearchStreams(isSelected) =>
+      Rx.combineLatest4<List<SongModel>, List<AlbumModel>, List<ArtistModel>,
+                  List<PlaylistModel>, CombinedSearchStream>(
+              _songsSearch$,
+              _albumsSearch$,
+              _artistsSearch$,
+              _playlistsSearch$,
+              (a, b, c, d) =>
+                  CombinedSearchStream(a, b, c, d, search_term, isSelected))
+          .asBroadcastStream();
+
   void search(String search) {
+    search_term = search;
     /*if (search.trim() == "") {
       _songsSearch$.add([]);
       _albumsSearch$.add([]);
@@ -120,6 +208,7 @@ class PlayerBloc {
     _songsSearch$.add(_songs$.value
         .where((element) =>
             element.title.toLowerCase().contains(search.toLowerCase()))
+        .take(20)
         .toList());
   }
 
@@ -127,6 +216,7 @@ class PlayerBloc {
     _albumsSearch$.add(_albums$.value
         .where((element) =>
             element.album.toLowerCase().contains(search.toLowerCase()))
+        .take(20)
         .toList());
   }
 
@@ -134,6 +224,7 @@ class PlayerBloc {
     _artistsSearch$.add(_artists$.value
         .where((element) =>
             element.artist.toLowerCase().contains(search.toLowerCase()))
+        .take(20)
         .toList());
   }
 
@@ -141,7 +232,21 @@ class PlayerBloc {
     _playlistsSearch$.add(_playlists$.value
         .where((element) =>
             element.playlist.toLowerCase().contains(search.toLowerCase()))
+        .take(20)
         .toList());
+  }
+
+  Future<List<SongModel>> getPlaylistSongs(int id) async {
+    if (_playlistCache.containsKey(id)) {
+      return _playlistCache[id]!;
+    }
+
+    List<SongModel> songs =
+        await OnAudioQuery().queryAudiosFrom(AudiosFromType.PLAYLIST, id);
+
+    _playlistCache[id] = songs;
+
+    return songs;
   }
 
   Stream<ModelQueueStream> get modelQueueStram =>
@@ -176,7 +281,7 @@ class PlayerBloc {
   Stream<bool> get playingStream =>
       audioHandler.playbackState.map((s) => s.playing);
 
-  PlayerBloc(AudioHandler _audioHandler) {
+  PlayerBloc(AudioPlayerHandler _audioHandler) {
     this._audioHandler = _audioHandler;
     _songs$ = BehaviorSubject();
     _albums$ = BehaviorSubject();
@@ -206,6 +311,9 @@ class PlayerBloc {
   }
 
   updatePlaylist() {
+    if (!inbetweenqueue$.hasValue) {
+      return;
+    }
     int songIndex = inbetweenqueue$.value.indexWhere((element) =>
         element.id == this._audioHandler.mediaItem.value!.extras!['id']);
     if (songIndex == -1) {
@@ -216,12 +324,15 @@ class PlayerBloc {
     print(songs$.hasValue);
 
     List<SongModel> songs = [];
-    for (MediaItem i in _audioHandler.queue.value.skip(
-        _audioHandler.queue.value.indexOf(this._audioHandler.mediaItem.value!) +
-            1 +
-            _inbetweenqueue$.value.length)) {
-      songs.add(
-          _songs$.value.firstWhere((element) => element.id == i.extras!['id']));
+    if (this._audioHandler.mediaItem.value != null) {
+      for (MediaItem i in _audioHandler.queue.value.skip(_audioHandler
+              .queue.value
+              .indexOf(this._audioHandler.mediaItem.value!) +
+          1 +
+          _inbetweenqueue$.value.length)) {
+        songs.add(_songs$.value
+            .firstWhere((element) => element.id == i.extras!['id']));
+      }
     }
 
     _playlist$.add(songs);
@@ -246,6 +357,7 @@ class PlayerBloc {
             extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
             duration: Duration(milliseconds: e.duration!)))
         .toList());
+    await _audioHandler.play();
   }
 
   addToFavorits(int id) {
@@ -288,7 +400,8 @@ class PlayerBloc {
     print(song);
     _inbetweenqueue$.add(_inbetweenqueue$.value..add(song));
     _audioHandler.insertQueueItem(
-        _audioHandler.queue.value.indexOf(this._audioHandler.mediaItem.value!),
+        _audioHandler.queue.value.indexOf(this._audioHandler.mediaItem.value!) +
+            _inbetweenqueue$.value.length,
         MediaItem(
             id: song.uri!,
             title: song.title,

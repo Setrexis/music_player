@@ -45,8 +45,7 @@ class _AlbumOverviewState extends State<AlbumOverview>
 
           if (snapshot.hasData) {
             snapshot.data!.forEach((element) {
-              if (element.albumId ==
-                  int.tryParse(widget.album.albumId.toString())) {
+              if (element.albumId == int.tryParse(widget.album.id.toString())) {
                 songs.add(element);
               }
             });
@@ -86,15 +85,15 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                 artworkBorder: BorderRadius.circular(10),
                                 artworkHeight: 180,
                                 artworkWidth: 180,
-                                id: widget.album.albumId,
+                                id: widget.album.id,
                                 type: ArtworkType.ALBUM,
                                 keepOldArtwork: true,
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(15, 0, 30, 0),
+                              padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                               child: Container(
-                                width: MediaQuery.of(context).size.width - 265,
+                                width: MediaQuery.of(context).size.width - 235,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment:
@@ -122,7 +121,7 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                     Text(
                                       widget.album.artist! +
                                           " · " +
-                                          widget.album.lastYear.toString(),
+                                          widget.album.numOfSongs.toString(),
                                       style: TextStyle(
                                           color: Theme.of(context)
                                               .textTheme
@@ -166,7 +165,9 @@ class _AlbumOverviewState extends State<AlbumOverview>
                                   DecoratedBox(
                                     decoration: BoxDecoration(
                                         gradient: LinearGradient(colors: [
-                                          Theme.of(context).accentColor,
+                                          Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
                                           Theme.of(context).primaryColorLight
                                         ]),
                                         borderRadius:

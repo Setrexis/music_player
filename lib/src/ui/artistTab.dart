@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player/src/bloc/InheritedProvider.dart';
+import 'package:music_player/src/ui/albumTab.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/ui/playerWidget.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
@@ -58,18 +59,59 @@ class _ArtistOverviewState extends State<ArtistOverview>
         builder: (context, snapshot) {
           songs = [];
           List<AlbumModel> albums = [];
-
+          Map<String, List<SongModel>> songMap = {};
           if (snapshot.hasData) {
-            snapshot.data!.songs.forEach((element) {
-              if (element.artistId == widget.artist.id) {
-                songs.add(element);
+            for (SongModel song in snapshot.data!.songs) {
+              if (song.artistId == widget.artist.id) {
+                songs.add(song);
+                if (songMap.containsKey(song.album)) {
+                  songMap[song.album]!.add(song);
+                } else {
+                  songMap[song.album!] = [song];
+                }
               }
-            });
-            snapshot.data!.albums.forEach((element) {
-              if (element.artistId == widget.artist.id.toString()) {
-                albums.add(element);
+            }
+            for (AlbumModel album in snapshot.data!.albums) {
+              if (album.artistId == widget.artist.id.toString()) {
+                albums.add(album);
               }
-            });
+            }
+          }
+
+          List<Widget> listItems = [];
+          for (String album in songMap.keys) {
+            listItems.add(Padding(
+              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 15),
+              child: ListTile(
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AlbumOverview(
+                          album: albums
+                              .firstWhere((element) => element.album == album)),
+                    )),
+                title: Text(album),
+                subtitle: Text(songMap[album]!.length.toString() + " Songs"),
+                trailing: IconButton(
+                    onPressed: () => _playerBloc.startPlayback(songMap[album]!),
+                    icon: Icon(
+                      Icons.play_arrow,
+                      color: Theme.of(context).colorScheme.secondary,
+                    )),
+              ),
+            ));
+            for (SongModel s in songMap[album]!) {
+              listItems.add(Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
+                child: SongListItem(
+                  playerBloc: _playerBloc,
+                  song: s,
+                  onTap: playSong,
+                  artist: false,
+                ),
+              ));
+            }
           }
 
           return Scaffold(
@@ -121,9 +163,9 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                   ),
                                 )),
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(15, 0, 30, 0),
+                              padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                               child: Container(
-                                width: MediaQuery.of(context).size.width - 265,
+                                width: MediaQuery.of(context).size.width - 235,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment:
@@ -182,60 +224,6 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    widget.artist.numberOfAlbums.toString() +
-                                        " Albums",
-                                    style: TextStyle(
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .bodyText1!
-                                            .color!
-                                            .withAlpha(122)),
-                                  ),
-                                  DecoratedBox(
-                                    decoration: BoxDecoration(
-                                        gradient: LinearGradient(colors: [
-                                          Theme.of(context).accentColor,
-                                          Theme.of(context).primaryColorLight
-                                        ]),
-                                        borderRadius:
-                                            BorderRadius.circular(80)),
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          playSong(songs.first, _playerBloc),
-                                      style: ElevatedButton.styleFrom(
-                                          primary: Colors.transparent,
-                                          elevation: 0.0),
-                                      child: Text('Play all'),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ))),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 30),
-                        child: AlbumListItem(album: albums[index]),
-                      );
-                    }, childCount: albums.length),
-                  ),
-                  SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _SliverAppBarDelegate(
-                          minHeight: 50,
-                          maxHeight: 50,
-                          child: Material(
-                            elevation: 0,
-                            color: Theme.of(context).backgroundColor,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(30, 8, 30, 8),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
                                     widget.artist.numberOfTracks.toString() +
                                         " Songs",
                                     style: TextStyle(
@@ -248,7 +236,9 @@ class _ArtistOverviewState extends State<ArtistOverview>
                                   DecoratedBox(
                                     decoration: BoxDecoration(
                                         gradient: LinearGradient(colors: [
-                                          Theme.of(context).accentColor,
+                                          Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
                                           Theme.of(context).primaryColorLight
                                         ]),
                                         borderRadius:
@@ -268,17 +258,8 @@ class _ArtistOverviewState extends State<ArtistOverview>
                           ))),
                   SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 30),
-                        child: SongListItem(
-                          playerBloc: _playerBloc,
-                          song: songs[index],
-                          onTap: playSong,
-                          artist: false,
-                        ),
-                      );
-                    }, childCount: songs.length),
+                      return listItems[index];
+                    }, childCount: listItems.length),
                   )
                 ],
               ),

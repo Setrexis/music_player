@@ -6,7 +6,7 @@ import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 
-late AudioHandler _audioHandler;
+late AudioPlayerHandler _audioHandler;
 
 Future<void> main() async {
   // store this in a singleton
@@ -31,7 +31,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData.light().copyWith(
-            accentColor: Color(0xffF07300),
+            colorScheme: ThemeData.light().colorScheme.copyWith(
+                secondary: Color(0xffF07300), primary: Color(0xfff2e7eb)),
             primaryColorDark: Color(0xFFE06A3A),
             iconTheme: IconThemeData().copyWith(color: Colors.black),
             primaryColor: Color(0xfff2e7eb),
@@ -46,7 +47,8 @@ class MyApp extends StatelessWidget {
                 actionsIconTheme:
                     IconThemeData().copyWith(color: Colors.black))),
         darkTheme: ThemeData.dark().copyWith(
-            accentColor: Color(0xffF07300),
+            colorScheme: ThemeData.dark().colorScheme.copyWith(
+                secondary: Color(0xffF07300), primary: Color(0xff1B0E13)),
             primaryColorDark: Color(0xFFE06A3A),
             iconTheme: IconThemeData().copyWith(color: Colors.white),
             primaryColor: Color(0xff1B0E13),
@@ -55,7 +57,13 @@ class MyApp extends StatelessWidget {
                 ThemeData(brightness: Brightness.dark).textTheme),
             canvasColor: Color(0xff1B0E13),
             backgroundColor: Colors.black,
-            scaffoldBackgroundColor: Colors.black),
+            scaffoldBackgroundColor: Colors.black,
+            appBarTheme: AppBarTheme(
+                titleTextStyle: TextStyle(color: Colors.white),
+                toolbarTextStyle: TextStyle(color: Colors.white),
+                iconTheme: IconThemeData().copyWith(color: Colors.white),
+                actionsIconTheme:
+                    IconThemeData().copyWith(color: Colors.white))),
         home: Home(),
       ),
     );

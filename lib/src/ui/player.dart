@@ -14,7 +14,6 @@ class PlayerOverview extends StatefulWidget {
 }
 
 class _PlayerOverviewState extends State<PlayerOverview> {
-
   @override
   Widget build(BuildContext context) {
     final _playerBloc = InheritedProvider.of(context)!.inheritedData;
@@ -168,9 +167,9 @@ class _PlayControllsState extends State<PlayControlls>
                   Icon icon = snapshot.hasData
                       ? snapshot.data!.shuffleMode ==
                               AudioServiceShuffleMode.all
-                          ? Icon(Icons.shuffle_on)
-                          : Icon(Icons.loop)
-                      : Icon(Icons.loop);
+                          ? Icon(Icons.shuffle_on_outlined)
+                          : Icon(Icons.shuffle)
+                      : Icon(Icons.shuffle);
                   return IconButton(
                       onPressed: () => {
                             snapshot.data!.shuffleMode ==
@@ -207,7 +206,7 @@ class _PlayControllsState extends State<PlayControlls>
                 ]),
                 child: CircleAvatar(
                   radius: 30,
-                  backgroundColor: Theme.of(context).accentColor,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
                   child: StreamBuilder<bool>(
                       stream: _playerBloc.audioHandler.playbackState
                           .map((state) => state.playing)
@@ -237,7 +236,18 @@ class _PlayControllsState extends State<PlayControlls>
                   Theme.of(context).textTheme.bodyText1!.color!.withAlpha(180),
             ),
             IconButton(
-                onPressed: () => print("TODO"),
+                onPressed: () {
+                  showSliderDialog(
+                    context: context,
+                    title: "Adjust volume",
+                    divisions: 10,
+                    min: 0.0,
+                    max: 1.0,
+                    value: _playerBloc.audioHandler.volume.value,
+                    stream: _playerBloc.audioHandler.volume,
+                    onChanged: _playerBloc.audioHandler.setVolume,
+                  );
+                },
                 icon: Icon(Icons.volume_up),
                 color: Theme.of(context)
                     .textTheme
@@ -260,7 +270,6 @@ class FutherActions extends StatefulWidget {
 }
 
 class _FutherActionsState extends State<FutherActions> {
-
   @override
   Widget build(BuildContext context) {
     final _playerBloc = InheritedProvider.of(context)!.inheritedData;
@@ -300,8 +309,11 @@ class _FutherActionsState extends State<FutherActions> {
                             : _playerBloc.addToFavorits(widget.id),
                         icon: Icon(Icons.favorite),
                         color: fav
-                            ? Theme.of(context).accentColor
-                            : Theme.of(context).accentColor.withAlpha(122),
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withAlpha(122),
                       );
                     }),
               ],
@@ -349,7 +361,7 @@ class _SeekBarState extends State<SeekBar> {
             data: SliderTheme.of(context).copyWith(
               trackHeight: 1.5,
               inactiveTrackColor: Theme.of(context).canvasColor,
-              activeTrackColor: Theme.of(context).accentColor,
+              activeTrackColor: Theme.of(context).colorScheme.secondary,
               thumbShape: SliderComponentShape.noThumb,
             ),
             child: Slider(
@@ -412,4 +424,46 @@ class _SeekBarState extends State<SeekBar> {
       ],
     );
   }
+}
+
+void showSliderDialog({
+  required BuildContext context,
+  required String title,
+  required int divisions,
+  required double min,
+  required double max,
+  String valueSuffix = '',
+  // TODO: Replace these two by ValueStream.
+  required double value,
+  required Stream<double> stream,
+  required ValueChanged<double> onChanged,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title, textAlign: TextAlign.center),
+      content: StreamBuilder<double>(
+        stream: stream,
+        builder: (context, snapshot) => Container(
+          height: 100.0,
+          child: Column(
+            children: [
+              Text('${snapshot.data?.toStringAsFixed(1)}$valueSuffix',
+                  style: const TextStyle(
+                      fontFamily: 'Fixed',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24.0)),
+              Slider(
+                divisions: divisions,
+                min: min,
+                max: max,
+                value: snapshot.data ?? value,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

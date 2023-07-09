@@ -29,6 +29,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.onPrimary,
       body: PlayerWidget(
         child: ListView(
           primary: true,
@@ -110,7 +111,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                 border: OutlineInputBorder(
                     borderSide: BorderSide.none,
                     borderRadius: BorderRadius.circular(25)),
-                fillColor: Theme.of(context).canvasColor,
+                fillColor: Theme.of(context).colorScheme.secondaryContainer,
                 hintText: "Song, artist or album ..."),
           ),
         ),
@@ -195,10 +196,6 @@ class _SearchResultState extends State<SearchResult> {
         children: [
           Wrap(spacing: 8, children: [
             ChoiceChip(
-              selectedColor: Theme.of(context).colorScheme.secondary,
-              labelStyle: TextStyle(
-                  color: MaterialStateProperty.resolveAs(Colors.white,
-                      [MaterialState.selected, MaterialState.pressed].toSet())),
               label: Text('Songs'),
               selected: _isSelected[0],
               onSelected: (bool selected) {
@@ -209,10 +206,6 @@ class _SearchResultState extends State<SearchResult> {
             ),
             ChoiceChip(
               label: Text('Albums'),
-              selectedColor: Theme.of(context).colorScheme.secondary,
-              labelStyle: TextStyle(
-                  color: MaterialStateProperty.resolveAs(Colors.white,
-                      [MaterialState.selected, MaterialState.pressed].toSet())),
               selected: _isSelected[1],
               onSelected: (bool selected) {
                 setState(() {
@@ -222,10 +215,6 @@ class _SearchResultState extends State<SearchResult> {
             ),
             ChoiceChip(
               label: Text('Artists'),
-              selectedColor: Theme.of(context).colorScheme.secondary,
-              labelStyle: TextStyle(
-                  color: MaterialStateProperty.resolveAs(Colors.white,
-                      [MaterialState.selected, MaterialState.pressed].toSet())),
               selected: _isSelected[2],
               onSelected: (bool selected) {
                 setState(() {
@@ -235,10 +224,6 @@ class _SearchResultState extends State<SearchResult> {
             ),
             ChoiceChip(
               label: Text('Playlists'),
-              selectedColor: Theme.of(context).colorScheme.secondary,
-              labelStyle: TextStyle(
-                  color: MaterialStateProperty.resolveAs(Colors.white,
-                      [MaterialState.selected, MaterialState.pressed].toSet())),
               selected: _isSelected[3],
               onSelected: (bool selected) {
                 setState(() {
@@ -432,7 +417,7 @@ class _RecentPlayedPlaylistWidgetState
               ),
             ),
             Container(
-              height: 266,
+              height: 270,
               child: StreamBuilder<List<PlaylistModel>>(
                   stream: _playerBloc.playlists$.stream,
                   builder: (context, snapshot) {
@@ -506,7 +491,7 @@ class _PlaylistWidgetState extends State<PlaylistWidget> {
                         ),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(25),
-                            color: Theme.of(context).backgroundColor),
+                            color: Theme.of(context).colorScheme.background),
                       );
                     }
 

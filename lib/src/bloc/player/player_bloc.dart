@@ -112,6 +112,7 @@ class CombinedSearchStream {
 }
 
 class PlayerBloc {
+  final OnAudioQuery onAudioQuery = OnAudioQuery();
   DeviceModel? deviceModel;
   late AudioPlayerHandler _audioHandler;
   late BehaviorSubject<List<SongModel>> _songs$;
@@ -149,14 +150,14 @@ class PlayerBloc {
   Map<int, List<SongModel>> _playlistCache = {};
 
   Future<void> fetchMusicInformation() async {
-    if (!await OnAudioQuery().permissionsStatus()) {
+    if (!await onAudioQuery.permissionsStatus()) {
       print("requesting permission");
-      print(await OnAudioQuery().permissionsRequest());
+      print(await onAudioQuery.permissionsRequest());
     }
-    OnAudioQuery().queryArtists().then((value) => _artists$.add(value));
-    OnAudioQuery().queryAlbums().then((value) => _albums$.add(value));
-    OnAudioQuery().queryPlaylists().then((value) => _playlists$.add(value));
-    OnAudioQuery().querySongs().then((value) async {
+    onAudioQuery.queryArtists().then((value) => _artists$.add(value));
+    onAudioQuery.queryAlbums().then((value) => _albums$.add(value));
+    onAudioQuery.queryPlaylists().then((value) => _playlists$.add(value));
+    onAudioQuery.querySongs().then((value) async {
       _songs$.add(value);
       print(value.length);
       prefs = await SharedPreferences.getInstance();
@@ -285,7 +286,7 @@ class PlayerBloc {
     }
 
     List<SongModel> songs =
-        await OnAudioQuery().queryAudiosFrom(AudiosFromType.PLAYLIST, id);
+        await onAudioQuery.queryAudiosFrom(AudiosFromType.PLAYLIST, id);
 
     _playlistCache[id] = songs;
 
@@ -341,7 +342,7 @@ class PlayerBloc {
     _searchHistory$ = BehaviorSubject();
 
     fetchMusicInformation();
-    OnAudioQuery().queryDeviceInfo().then((value) => deviceModel = value);
+    onAudioQuery.queryDeviceInfo().then((value) => deviceModel = value);
     this.audioHandler.queue.listen((event) {
       updatePlaylist();
     });
@@ -370,6 +371,9 @@ class PlayerBloc {
       inbetweenqueue$.add(inbetweenqueue$.value..removeAt(songIndex));
     }
     print(songs$.hasValue);
+    print(inbetweenqueue$.value.length);
+
+    List<SongModel> songs_value = songs$.value;
 
     List<SongModel> songs = [];
     if (this._audioHandler.mediaItem.value != null) {
@@ -378,8 +382,8 @@ class PlayerBloc {
               .indexOf(this._audioHandler.mediaItem.value!) +
           1 +
           _inbetweenqueue$.value.length)) {
-        songs.add(_songs$.value
-            .firstWhere((element) => element.id == i.extras!['id']));
+        songs.add(
+            songs_value.firstWhere((element) => element.id == i.extras!['id']));
       }
     }
 
@@ -402,7 +406,17 @@ class PlayerBloc {
                 "content://media/external/audio/albumart/" + e.id.toString()),
             album: e.album,
             artist: e.artist,
-            extras: Map.fromIterables(["id", "sdk"], [e.id, sdk]),
+            extras: Map.fromIterables([
+              "id",
+              "sdk",
+              "loadThumbnailUri"
+            ], [
+              e.id,
+              sdk,
+              Uri.parse("content://media/external/audio/albumart/" +
+                      e.id.toString())
+                  .toString()
+            ]),
             duration: Duration(milliseconds: e.duration!)))
         .toList());
     await _audioHandler.play();
@@ -457,8 +471,15 @@ class PlayerBloc {
                 song.id.toString()),
             album: song.album,
             artist: song.artist,
-            extras: Map.fromIterables(
-                ["id", "sdk"], [song.id, deviceModel!.version]),
+            extras: Map.fromIterables([
+              "id",
+              "loadThumbnailUri"
+            ], [
+              song.id,
+              Uri.parse("content://media/external/audio/albumart/" +
+                      song.id.toString())
+                  .toString()
+            ]),
             duration: Duration(milliseconds: song.duration!)));
   }
 }

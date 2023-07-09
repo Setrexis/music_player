@@ -40,3 +40,4 @@ final _defaultDarkColorScheme = ThemeData.dark()
             iconTheme: IconThemeData().copyWith(color: Colors.white),
             actionsIconTheme: IconThemeData().copyWith(color: Colors.white)))
     .colorScheme;
+

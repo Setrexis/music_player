@@ -17,7 +17,6 @@ class PlayerWidget extends StatefulWidget {
 }
 
 class _PlayerWidgetState extends State<PlayerWidget> {
-
   @override
   Widget build(BuildContext context) {
     final _playerBloc = InheritedProvider.of(context)!.inheritedData;
@@ -47,9 +46,10 @@ class _PlayerWidgetState extends State<PlayerWidget> {
                           end: Alignment.bottomCenter,
                           colors: [
                         Theme.of(context)
-                            .scaffoldBackgroundColor
+                            .colorScheme
+                            .onPrimary
                             .withOpacity(0.0),
-                        Theme.of(context).scaffoldBackgroundColor,
+                        Theme.of(context).colorScheme.onPrimary,
                       ])),
                 ),
                 bottom: 99,
@@ -100,7 +100,8 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget> {
                       child: ClipRRect(
                         child: Container(
                           height: 80,
-                          color: Theme.of(context).canvasColor,
+                          color:
+                              Theme.of(context).colorScheme.secondaryContainer,
                         ),
                         borderRadius: BorderRadius.circular(50),
                       )),
@@ -111,7 +112,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget> {
                       child: Container(
                         height: 90,
                         width: 90,
-                        color: Theme.of(context).canvasColor,
+                        color: Theme.of(context).colorScheme.surface,
                         child: QueryArtworkWidget(
                           id: snapshot.data!.extras!["id"],
                           type: ArtworkType.AUDIO,
@@ -146,6 +147,7 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget> {
                               snapshot.data!.artist! +
                                   " · " +
                                   snapshot.data!.album!,
+                              maxLines: 1,
                               style: TextStyle(
                                   color: Theme.of(context)
                                       .textTheme
@@ -189,8 +191,8 @@ class CircularProgressSeeker extends StatelessWidget {
                   ? 0
                   : snapshot.data!.inMilliseconds /
                       _mediaItem.duration!.inMilliseconds,
-              color: Theme.of(context).colorScheme.secondary,
-              backgroundColor: Theme.of(context).backgroundColor,
+              color: Theme.of(context).colorScheme.primary,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             ),
           );
         });
@@ -234,7 +236,7 @@ class _AnimatedPlayPauseButtonState extends State<AnimatedPlayPauseButton>
               .animateTo(snapshot.hasData && snapshot.data! ? 0.0 : 1.0);
           return CircleAvatar(
               radius: 30,
-              backgroundColor: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               child: IconButton(
                 onPressed: () => !snapshot.data!
                     ? widget._playerBloc.audioHandler.play()
@@ -242,7 +244,7 @@ class _AnimatedPlayPauseButtonState extends State<AnimatedPlayPauseButton>
                 icon: AnimatedIcon(
                   progress: animation,
                   icon: AnimatedIcons.pause_play,
-                  color: Theme.of(context).backgroundColor,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
                 iconSize: 30,
               ));

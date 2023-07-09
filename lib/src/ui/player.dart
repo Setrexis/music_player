@@ -32,8 +32,8 @@ class _PlayerOverviewState extends State<PlayerOverview> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surfaceVariant
+              Theme.of(context).colorScheme.primaryContainer,
+              Theme.of(context).colorScheme.background
             ])),
         padding: const EdgeInsets.only(top: 50),
         child: StreamBuilder<MediaItem?>(
@@ -201,9 +201,9 @@ class _PlayControllsState extends State<PlayControlls>
               child: Container(
                 decoration: BoxDecoration(boxShadow: [
                   BoxShadow(
-                      color: Theme.of(context).colorScheme.secondary,
-                      blurRadius: 50.0,
-                      spreadRadius: 5.0)
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      blurRadius: 30.0,
+                      spreadRadius: 10.0)
                 ]),
                 child: CircleAvatar(
                   radius: 30,
@@ -281,7 +281,7 @@ class _FutherActionsState extends State<FutherActions> {
           borderRadius: BorderRadius.circular(30),
           child: Container(
             height: 80,
-            color: Theme.of(context).canvasColor,
+            color: Theme.of(context).colorScheme.secondaryContainer,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -308,13 +308,11 @@ class _FutherActionsState extends State<FutherActions> {
                         onPressed: () => fav
                             ? _playerBloc.removeFromFavorits(widget.id)
                             : _playerBloc.addToFavorits(widget.id),
-                        icon: Icon(Icons.favorite),
+                        icon:
+                            Icon(fav ? Icons.favorite : Icons.favorite_border),
                         color: fav
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context)
-                                .colorScheme
-                                .secondary
-                                .withAlpha(122),
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).iconTheme.color,
                       );
                     }),
               ],

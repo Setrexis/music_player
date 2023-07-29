@@ -24,39 +24,42 @@ class _PlayerWidgetState extends State<PlayerWidget> {
       child: StreamBuilder<MediaState>(
         stream: _playerBloc.mediaStateStream,
         builder: (context, snapshot) {
+          double offset = 100;
           if (!snapshot.hasData || snapshot.data!.mediaItem == null) {
-            return widget.child;
+            offset = 0;
           }
           return Stack(
             children: [
               Positioned(
                 child: widget.child,
-                bottom: 100,
+                bottom: offset,
                 left: 0,
                 top: 0,
                 right: 0,
               ),
-              Positioned(
-                child: Container(
-                  height: 41,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          tileMode: TileMode.decal,
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                        Theme.of(context)
-                            .colorScheme
-                            .onPrimary
-                            .withOpacity(0.0),
-                        Theme.of(context).colorScheme.onPrimary,
-                      ])),
+              if (offset != 0)
+                Positioned(
+                  child: Container(
+                    height: 41,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            tileMode: TileMode.decal,
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                          Theme.of(context)
+                              .colorScheme
+                              .background
+                              .withOpacity(0.0),
+                          Theme.of(context).colorScheme.background,
+                        ])),
+                  ),
+                  bottom: 99,
+                  left: 0,
+                  right: 0,
                 ),
-                bottom: 99,
-                left: 0,
-                right: 0,
-              ),
-              Positioned(bottom: 10, child: BottomPlayerWidget())
+              if (offset != 0)
+                Positioned(bottom: 10, child: BottomPlayerWidget())
             ],
           );
         },
@@ -76,95 +79,110 @@ class _BottomPlayerWidgetState extends State<BottomPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     final PlayerBloc _playerBloc = InheritedProvider.of(context)!.inheritedData;
-    return Container(
-      height: 100,
-      width: MediaQuery.of(context).size.width,
-      child: StreamBuilder<MediaItem?>(
-        stream: _playerBloc.audioHandler.mediaItem,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data == null) {
-            return Container();
-          }
-          return InkWell(
-            onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => PlayerOverview())),
-            child: Container(
-              height: 100,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity == null) return;
+        // Swiping in right direction.
+        if (details.primaryVelocity! < 0) {
+          _playerBloc.audioHandler.skipToNext();
+        }
+
+        // Swiping in left direction.
+        if (details.primaryVelocity! > 0) {
+          _playerBloc.audioHandler.skipToPrevious();
+        }
+      },
+      child: Container(
+        height: 100,
+        width: MediaQuery.of(context).size.width,
+        child: StreamBuilder<MediaItem?>(
+          stream: _playerBloc.audioHandler.mediaItem,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data == null) {
+              return Container();
+            }
+            return InkWell(
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => PlayerOverview())),
+              child: Container(
+                height: 100,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                        left: 25,
+                        right: 25,
+                        bottom: 10,
+                        child: ClipRRect(
+                          child: Container(
+                            height: 80,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
+                          ),
+                          borderRadius: BorderRadius.circular(50),
+                        )),
+                    Positioned(
                       left: 25,
-                      right: 25,
-                      bottom: 10,
                       child: ClipRRect(
-                        child: Container(
-                          height: 80,
-                          color:
-                              Theme.of(context).colorScheme.secondaryContainer,
-                        ),
                         borderRadius: BorderRadius.circular(50),
-                      )),
-                  Positioned(
-                    left: 25,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: Container(
-                        height: 90,
-                        width: 90,
-                        color: Theme.of(context).colorScheme.surface,
-                        child: QueryArtworkWidget(
-                          id: snapshot.data!.extras!["id"],
-                          type: ArtworkType.AUDIO,
-                          keepOldArtwork: true,
-                          nullArtworkWidget: Icon(
-                            Icons.music_note,
-                            size: 50,
+                        child: Container(
+                          height: 90,
+                          width: 90,
+                          color: Theme.of(context).colorScheme.surface,
+                          child: QueryArtworkWidget(
+                            id: snapshot.data!.extras!["id"],
+                            type: ArtworkType.AUDIO,
+                            keepOldArtwork: true,
+                            nullArtworkWidget: Icon(
+                              Icons.music_note,
+                              size: 50,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                      left: 25,
-                      child: CircularProgressSeeker(
-                        mediaItem: snapshot.data!,
-                      )),
-                  Positioned(
-                      left: 130,
-                      right: 100,
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              snapshot.data!.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.clip,
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            Text(
-                              snapshot.data!.artist! +
-                                  " · " +
-                                  snapshot.data!.album!,
-                              maxLines: 1,
-                              style: TextStyle(
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyText1!
-                                      .color!
-                                      .withAlpha(122)),
-                            )
-                          ])),
-                  Positioned(
-                    right: 35,
-                    child: AnimatedPlayPauseButton(playerBloc: _playerBloc),
-                  ),
-                ],
+                    Positioned(
+                        left: 25,
+                        child: CircularProgressSeeker(
+                          mediaItem: snapshot.data!,
+                        )),
+                    Positioned(
+                        left: 130,
+                        right: 100,
+                        child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                snapshot.data!.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.clip,
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              Text(
+                                snapshot.data!.artist! +
+                                    " · " +
+                                    snapshot.data!.album!,
+                                maxLines: 1,
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyText1!
+                                        .color!
+                                        .withAlpha(122)),
+                              )
+                            ])),
+                    Positioned(
+                      right: 35,
+                      child: AnimatedPlayPauseButton(playerBloc: _playerBloc),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:music_player/src/bloc/InheritedProvider.dart';
 import 'package:music_player/src/ui/home.dart';
 import 'package:music_player/src/bloc/player/player_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:on_audio_room/on_audio_room.dart';
 
 late AudioPlayerHandler _audioHandler;
 
@@ -74,9 +75,7 @@ class MyApp extends StatelessWidget {
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) => InheritedProvider(
         inheritedData: PlayerBloc(_audioHandler),
-        child: App(
-            darkDynamic: darkDynamic ?? _defaultDarkColorScheme,
-            lightDynamic: lightDynamic ?? _defaultLightColorScheme),
+        child: App(darkDynamic: darkDynamic, lightDynamic: lightDynamic),
       ),
     );
   }
@@ -89,8 +88,8 @@ class App extends StatefulWidget {
     required this.darkDynamic,
   }) : super(key: key);
 
-  final ColorScheme lightDynamic;
-  final ColorScheme darkDynamic;
+  final ColorScheme? lightDynamic;
+  final ColorScheme? darkDynamic;
 
   @override
   State<App> createState() => _AppState();
@@ -98,8 +97,8 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final PlayerBloc _playerBloc;
-  late ColorScheme lightDynamic;
-  late ColorScheme darkDynamic;
+  late ColorScheme? lightDynamic;
+  late ColorScheme? darkDynamic;
 
   Future<ColorScheme> colorScheme(
       ImageProvider image, Brightness brightness) async {
@@ -115,6 +114,12 @@ class _AppState extends State<App> {
     Timer(Duration(milliseconds: 300), () {
       setUpColorScheme();
     });
+  }
+
+  @override
+  void dispose() {
+    _playerBloc.dispose();
+    super.dispose();
   }
 
   void setUpColorScheme() async {
@@ -141,14 +146,16 @@ class _AppState extends State<App> {
         colorScheme: lightDynamic,
         useMaterial3: true,
         textTheme: GoogleFonts.mavenProTextTheme(),
-        //colorSchemeSeed: Color.fromRGBO(238, 7, 7, 1),
+        colorSchemeSeed:
+            lightDynamic == null ? Color.fromRGBO(238, 99, 7, 1) : null,
       ),
       darkTheme: ThemeData(
-        colorScheme: darkDynamic,
-        useMaterial3: true,
-        textTheme: GoogleFonts.mavenProTextTheme(
-            ThemeData(brightness: Brightness.dark).textTheme),
-      ),
+          colorScheme: darkDynamic,
+          useMaterial3: true,
+          textTheme: GoogleFonts.mavenProTextTheme(
+              ThemeData(brightness: Brightness.dark).textTheme),
+          colorSchemeSeed:
+              darkDynamic == null ? Color.fromRGBO(238, 99, 7, 1) : null),
       home: Home(),
     );
   }

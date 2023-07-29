@@ -20,10 +20,12 @@ class _PlayerOverviewState extends State<PlayerOverview> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        elevation: 0.0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.transparent,
-      ),
+          elevation: 0.0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.transparent,
+          iconTheme: IconThemeData(
+            color: Theme.of(context).textTheme.bodyText1!.color!,
+          )),
       extendBody: true,
       extendBodyBehindAppBar: true,
       body: Container(

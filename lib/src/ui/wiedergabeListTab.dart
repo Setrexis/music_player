@@ -13,7 +13,6 @@ class WiedergabeListe extends StatefulWidget {
 }
 
 class _WiedergabeListeState extends State<WiedergabeListe> {
-
   @override
   Widget build(BuildContext context) {
     final _playerBloc = InheritedProvider.of(context)!.inheritedData;
@@ -24,7 +23,10 @@ class _WiedergabeListeState extends State<WiedergabeListe> {
           elevation: 0.0,
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.transparent,
-          title: Text("Next up"),
+          title: Text("Next up", style: Theme.of(context).textTheme.headline6),
+          iconTheme: IconThemeData(
+            color: Theme.of(context).textTheme.bodyText1!.color!,
+          ),
         ),
         body: Container(
           padding: const EdgeInsets.only(top: 90),
@@ -98,12 +100,12 @@ class _WiedergabeListeState extends State<WiedergabeListe> {
                                   playerBloc: _playerBloc,
                                   song: playlist.data![index],
                                   key: Key('p$index'),
-                                  onTap:
-                                      (SongModel song, PlayerBloc playerBloc) =>
-                                          _playerBloc.startPlayback(
-                                              playlist.data!.sublist(index)
-                                                ..addAll(playlist.data!
-                                                    .sublist(0, index))),
+                                  onTap: (SongModel song,
+                                          PlayerBloc playerBloc) =>
+                                      _playerBloc.startPlayback(playlist.data!
+                                          .sublist(index)
+                                        ..addAll(
+                                            playlist.data!.sublist(0, index))),
                                   left: IconButton(
                                     icon: Icon(Icons.close),
                                     onPressed: () {

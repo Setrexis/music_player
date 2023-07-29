@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:music_player/AudioPlayer.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:on_audio_room/on_audio_room.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'dart:async';
@@ -113,6 +114,7 @@ class CombinedSearchStream {
 
 class PlayerBloc {
   final OnAudioQuery onAudioQuery = OnAudioQuery();
+  final OnAudioRoom onAudioRoom = OnAudioRoom();
   DeviceModel? deviceModel;
   late AudioPlayerHandler _audioHandler;
   late BehaviorSubject<List<SongModel>> _songs$;
@@ -457,7 +459,7 @@ class PlayerBloc {
         _audioHandler.queue.value.firstWhere((element) => element.id == uri));
   }
 
-  addItemToQuoue(SongModel song) {
+  addItemToQueue(SongModel song) {
     print("Add to queue");
     print(song);
     _inbetweenqueue$.add(_inbetweenqueue$.value..add(song));
@@ -481,5 +483,25 @@ class PlayerBloc {
                   .toString()
             ]),
             duration: Duration(milliseconds: song.duration!)));
+  }
+
+  Future<int?> createPlaylist(String name) async {
+    return onAudioRoom.createPlaylist(name);
+  }
+
+  deletePlaylist(int id) async {
+    await onAudioRoom.deletePlaylist(id);
+  }
+
+  Future<bool> renamePlaylist(int id, String name) async {
+    return await onAudioRoom.renamePlaylist(id, name);
+  }
+
+  Future<void> addToPlaylist(int id, List<SongModel> songs) async {
+    //await onAudioRoom.addToPlaylist(id, songs);
+  }
+
+  void dispose() {
+    onAudioRoom.closeRoom();
   }
 }

@@ -29,7 +29,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: PlayerWidget(
         child: ListView(
           primary: true,
@@ -697,7 +697,6 @@ class SongListItem extends StatelessWidget {
                 ? PopupMenuButton<SongOptions>(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
-                    color: Theme.of(context).canvasColor,
                     onSelected: (value) {
                       switch (value) {
                         case SongOptions.share:
@@ -725,7 +724,7 @@ class SongListItem extends StatelessWidget {
                           );
                           break;
                         case SongOptions.addToQueue:
-                          _playerBloc.addItemToQuoue(song);
+                          _playerBloc.addItemToQueue(song);
                           break;
                         case SongOptions.album:
                           Navigator.of(context).push(new MaterialPageRoute(
